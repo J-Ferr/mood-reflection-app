@@ -1,0 +1,101 @@
+const pool = require("../db/pool");
+
+// helper: get "today" in server time (fine for MVP)
+function todayDateString() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+exports.getTodayEntry = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const today = todayDateString();
+
+    const result = await pool.query(
+      `SELECT id, entry_date, mood, prompt, note, created_at
+       FROM daily_entries
+       WHERE user_id = $1 AND entry_date = $2`,
+      [userId, today]
+    );
+
+    res.json({ entry: result.rows[0] || null });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.createEntry = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { mood, prompt, note } = req.body;
+
+    if (!Number.isInteger(mood) || mood < 1 || mood > 5) {
+      return res.status(400).json({ error: "Mood must be an integer from 1 to 5" });
+    }
+
+    if (typeof prompt !== "string" || prompt.trim().length < 3) {
+      return res.status(400).json({ error: "Prompt is required" });
+    }
+
+    const entryDate = todayDateString();
+
+    const result = await pool.query(
+      `INSERT INTO daily_entries (user_id, entry_date, mood, prompt, note)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, entry_date, mood, prompt, note, created_at`,
+      [userId, entryDate, mood, prompt.trim(), typeof note === "string" ? note.trim() : null]
+    );
+
+    res.status(201).json({ entry: result.rows[0] });
+  } catch (err) {
+    // UNIQUE violation => user already created entry today
+    if (err.code === "23505") {
+      return res.status(409).json({ error: "You already submitted today’s check-in" });
+    }
+    next(err);
+  }
+};
+
+exports.listEntries = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      `SELECT id, entry_date, mood, prompt, note, created_at
+       FROM daily_entries
+       WHERE user_id = $1
+       ORDER BY entry_date DESC`,
+      [userId]
+    );
+
+    res.json({ entries: result.rows });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getEntryByDate = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { date } = req.params;
+
+    // minimal date validation
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: "Date must be YYYY-MM-DD" });
+    }
+
+    const result = await pool.query(
+      `SELECT id, entry_date, mood, prompt, note, created_at
+       FROM daily_entries
+       WHERE user_id = $1 AND entry_date = $2`,
+      [userId, date]
+    );
+
+    res.json({ entry: result.rows[0] || null });
+  } catch (err) {
+    next(err);
+  }
+};

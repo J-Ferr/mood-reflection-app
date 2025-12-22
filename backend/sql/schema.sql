@@ -1,0 +1,23 @@
+-- USERS
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- DAILY ENTRIES
+CREATE TABLE IF NOT EXITS daily_entries (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    entry_date DATE NOT NULL,
+    mood INTEGER NOT NULL CHECK (mood BETWEEN 1 AND 5),
+    prompt TEXT NOT NULL,
+    note TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- THE IMPORTANT RULE: 1 ENTRY PER USER PER DAY (ENFORCED BY DB)
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_daily_entryy_per_user_day
+ON daily_entries(user_id, entry_date);
