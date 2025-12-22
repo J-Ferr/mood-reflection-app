@@ -99,3 +99,49 @@ exports.getEntryByDate = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.updateTodayEntry = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { mood, note } = req.body;
+
+    if (mood === undefined && note === undefined) {
+      return res.status(400).json({ error: "Nothing to update" });
+    }
+
+    if (mood !== undefined) {
+      if (!Number.isInteger(mood) || mood < 1 || mood > 5) {
+        return res.status(400).json({ error: "Mood must be an integer from 1 to 5" });
+      }
+    }
+
+    const today = todayDateString();
+
+    const result = await pool.query(
+      `
+      UPDATE daily_entries
+      SET
+        mood = COALESCE($1, mood),
+        note = COALESCE($2, note),
+        updated_at = NOW()
+      WHERE user_id = $3 AND entry_date = $4
+      RETURNING id, entry_date, mood, prompt, note, updated_at
+      `,
+      [
+        mood ?? null,
+        typeof note === "string" ? note.trim() : null,
+        userId,
+        today
+      ]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "No entry found for today" });
+    }
+
+    res.json({ entry: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+};
+

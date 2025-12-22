@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
-const { getTodayEntry, createEntry, listEntries, getEntryByDate } = require("../controllers/entries.controller");
+const { getTodayEntry, createEntry, listEntries, getEntryByDate, updateTodayEntry } = require("../controllers/entries.controller");
 
 router.use(auth);
 
 router.get("/today", getTodayEntry);
 router.post("/", createEntry);
+router.patch("/today", updateTodayEntry);
 router.get("/", listEntries);
 router.get("/:date", getEntryByDate); // date format YYYY-MM-DD
 
