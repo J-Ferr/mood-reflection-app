@@ -145,3 +145,58 @@ exports.updateTodayEntry = async (req, res, next) => {
   }
 };
 
+exports.getEntryStats = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // 1️⃣ Average mood + total entries
+    const summaryResult = await pool.query(
+      `
+      SELECT
+        COUNT(*)::int AS "totalEntries",
+        ROUND(AVG(mood)::numeric, 2) AS "averageMood"
+      FROM daily_entries
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    const summary = summaryResult.rows[0];
+
+    // 2️⃣ Best day (highest mood)
+    const bestDayResult = await pool.query(
+      `
+      SELECT entry_date, mood
+      FROM daily_entries
+      WHERE user_id = $1
+      ORDER BY mood DESC, entry_date DESC
+      LIMIT 1
+      `,
+      [userId]
+    );
+
+    // 3️⃣ Worst day (lowest mood)
+    const worstDayResult = await pool.query(
+      `
+      SELECT entry_date, mood
+      FROM daily_entries
+      WHERE user_id = $1
+      ORDER BY mood ASC, entry_date DESC
+      LIMIT 1
+      `,
+      [userId]
+    );
+
+    res.json({
+      totalEntries: summary.totalEntries,
+      averageMood: summary.averageMood
+        ? Number(summary.averageMood)
+        : null,
+      bestDay: bestDayResult.rows[0] || null,
+      worstDay: worstDayResult.rows[0] || null
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
