@@ -10,6 +10,9 @@ export default function Dashboard() {
   const [prompt, setPrompt] = useState("");
   const [entry, setEntry] = useState(null);
   const [error, setError] = useState("");
+  const [mood, setMood] = useState(3);
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   function handleLogout() {
     clearToken();
@@ -45,6 +48,48 @@ export default function Dashboard() {
       setLoading(false);
     }
   }
+
+  async function handleCreateEntry(e) {
+  e.preventDefault();
+  setError("");
+  setSubmitting(true);
+
+  try {
+    const res = await axiosClient.post("/entries", {
+      mood,
+      prompt,
+      note,
+    });
+
+    // Show the saved entry immediately
+    setEntry(res.data.entry);
+  } catch (err) {
+    const status = err?.response?.status;
+
+    // Clear note when entry gets saved
+    setNote("");
+
+    // If user already submitted today, just reload state
+    if (status === 409) {
+      await loadDashboard();
+      return;
+    }
+
+    const msg =
+      err?.response?.data?.error ||
+      err?.message ||
+      "Failed to submit today’s check-in.";
+    setError(msg);
+
+    if (status === 401) {
+      clearToken();
+      navigate("/login");
+    }
+  } finally {
+    setSubmitting(false);
+  }
+}
+
 
   useEffect(() => {
     loadDashboard();
@@ -124,20 +169,56 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white border rounded-xl p-5 space-y-2">
-                <div className="font-medium">You haven’t checked in yet.</div>
-                <p className="text-slate-600 text-sm">
-                  Next: we’ll add the mood + reflection form here.
+            <div className="bg-white border rounded-xl p-5 space-y-4">
+              <div>
+                <div className="font-medium">Today’s check-in</div>
+                <p className="text-sm text-slate-600">
+                  Pick a mood and write a quick reflection.
                 </p>
-                <button
-                  className="mt-2 px-4 py-2 rounded-lg bg-slate-900 text-white hover:opacity-90"
-                  disabled
-                  title="Next: we’ll enable this"
-                >
-                  Start today’s check-in (next)
-                </button>
-              </div>
-            )}
+            </div>
+
+            <form className="space-y-4" onSubmit={handleCreateEntry}>
+                <div className="space-y-2">
+                  <div className="text-sm text-slate-500">Mood (1–5)</div>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        type="button"
+                        key={n}
+                        onClick={() => setMood(n)}
+                        className={
+                            "px-3 py-2 rounded-lg border text-sm " +
+                            (mood === n
+                                ? "bg-slate-900 text-white border-slate-900"
+                                : "bg-white hover:bg-slate-50")
+                        }
+                    >
+                        {n}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="space-y-1">
+                <label className="text-sm text-slate-500">Reflection (optional)</label>
+                <textarea
+                    className="w-full min-h-[120px] border rounded-lg p-3"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Write a few sentences…"
+                />
+            </div>
+
+            <button
+                disabled={submitting}
+                className="w-full px-4 py-2 rounded-lg bg-slate-900 text-white hover:opacity-90 disabled:opacity-60"
+            >
+                {submitting ? "Saving…" : "Submit today’s check-in"}
+              </button>
+           </form>
+        </div>
+        )
+      }
           </>
         )}
       </div>
