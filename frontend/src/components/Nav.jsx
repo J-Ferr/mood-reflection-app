@@ -1,8 +1,11 @@
 import { NavLink } from "react-router-dom";
 
 const base =
-  "text-sm px-3 py-2 rounded-lg border bg-white hover:bg-slate-50";
-const active = "bg-slate-900 text-white border-slate-900 hover:bg-slate-900";
+  "text-sm px-3 py-2 rounded-lg border bg-white hover:bg-slate-50 transition";
+
+const active =
+  "bg-slate-900 border-slate-900 text-red-400 font-semibold";
+
 
 export default function Nav() {
   return (
