@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { clearToken } from "../auth/useAuth";
+import Nav from "../components/Nav";
 
 function formatDate(dateStr) {
   // dateStr expected like "2026-01-04" or ISO
@@ -124,6 +125,8 @@ export default function History() {
             Back to dashboard
           </Link>
         </div>
+
+        <Nav />
 
         {loading && (
           <div className="bg-white border rounded-xl p-5">

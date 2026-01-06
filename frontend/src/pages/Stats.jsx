@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { clearToken } from "../auth/useAuth";
+import Nav from "../components/Nav";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -72,6 +73,8 @@ export default function Stats() {
             Back to dashboard
           </Link>
         </div>
+
+        <Nav />
 
         {loading && (
           <div className="bg-white border rounded-xl p-5 text-slate-600">

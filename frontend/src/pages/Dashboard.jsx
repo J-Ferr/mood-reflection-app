@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { clearToken } from "../auth/useAuth";
+import Nav from "../components/Nav";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -157,13 +158,7 @@ export default function Dashboard() {
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <div className="flex items-center gap-3">
-            <Link className="text-sm underline" to="/history">
-              History
-            </Link>
-            <Link className="text-sm underline" to="/stats">
-              Stats
-            </Link>
+          <div>
             <button
               onClick={handleLogout}
               className="text-sm px-3 py-2 rounded-lg border bg-white hover:bg-slate-50"
@@ -172,6 +167,8 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
+        <Nav />
 
         {loading && (
           <div className="bg-white border rounded-xl p-5">
