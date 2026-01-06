@@ -3,6 +3,18 @@ import { Link, useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { clearToken } from "../auth/useAuth";
 
+function formatDate(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export default function Stats() {
   const navigate = useNavigate();
 
@@ -16,7 +28,7 @@ export default function Stats() {
 
     try {
       const res = await axiosClient.get("/entries/stats");
-      setStats(res.data?.stats ?? res.data ?? null);
+      setStats(res.data ?? null);
     } catch (err) {
       const status = err?.response?.status;
       const msg =
@@ -36,6 +48,11 @@ export default function Stats() {
     loadStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const totalEntries = stats?.totalEntries ?? 0;
+  const averageMood = stats?.averageMood ?? "—";
+  const bestDay = stats?.bestDay ?? null;
+  const worstDay = stats?.worstDay ?? null;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -75,31 +92,18 @@ export default function Stats() {
           </div>
         )}
 
-        {!loading && !error && stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <StatCard
-              label="Total entries"
-              value={stats.totalEntries ?? stats.total_entries ?? "—"}
-            />
-            <StatCard
-              label="Average mood"
-              value={stats.avgMood ?? stats.avg_mood ?? "—"}
-            />
-            <StatCard
-              label="Best mood"
-              value={stats.maxMood ?? stats.max_mood ?? "—"}
-            />
-            <StatCard
-              label="Lowest mood"
-              value={stats.minMood ?? stats.min_mood ?? "—"}
-            />
-          </div>
-        )}
+        {!loading && !error && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <StatCard label="Total entries" value={totalEntries} />
+              <StatCard label="Average mood" value={`${averageMood}/5`} />
+            </div>
 
-        {!loading && !error && !stats && (
-          <div className="bg-white border rounded-xl p-5 text-slate-600">
-            No stats available yet.
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DayCard title="Best day" day={bestDay} />
+              <DayCard title="Worst day" day={worstDay} />
+            </div>
+          </>
         )}
       </div>
     </div>
@@ -114,3 +118,23 @@ function StatCard({ label, value }) {
     </div>
   );
 }
+
+function DayCard({ title, day }) {
+  return (
+    <div className="bg-white border rounded-xl p-5 space-y-2">
+      <div className="text-sm text-slate-500">{title}</div>
+
+      {!day ? (
+        <div className="text-slate-600">—</div>
+      ) : (
+        <>
+          <div className="text-xl font-semibold">{day.mood}/5</div>
+          <div className="text-sm text-slate-600">
+            {formatDate(day.entry_date)}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
