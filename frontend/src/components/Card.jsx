@@ -2,7 +2,7 @@ export default function Card({ children, className = "" }) {
   return (
     <div
       className={
-        "bg-white/90 backdrop-blur border border-slate-200 rounded-2xl shadow-sm " +
+        "bg-white backdrop-blur border border-slate-200 rounded-2xl shadow-sm " +
         "p-5 " +
         className
       }
