@@ -15,6 +15,8 @@ const MOODS = [
   { value: 5, emoji: "😄", label: "Great" },
 ];
 
+const labelClass = "text-xs uppercase tracking-wide text-slate-500";
+
 export default function Dashboard() {
   const navigate = useNavigate();
 
@@ -23,12 +25,12 @@ export default function Dashboard() {
   const [entry, setEntry] = useState(null);
   const [error, setError] = useState("");
 
-  // Create (POST /entries)
+  // Create
   const [mood, setMood] = useState(3);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Edit (PATCH /entries/today)
+  // Edit
   const [isEditing, setIsEditing] = useState(false);
   const [editMood, setEditMood] = useState(3);
   const [editNote, setEditNote] = useState("");
@@ -185,17 +187,19 @@ export default function Dashboard() {
 
       {loading && (
         <Card>
-          <p className="text-slate-600">Loading today’s check-in…</p>
+          <p className="text-slate-600 leading-relaxed">
+            Loading today’s check-in…
+          </p>
         </Card>
       )}
 
       {!loading && error && (
-        <Card className="border-red-200 bg-red-50/80">
+        <Card className="border-red-200 bg-red-50/80 space-y-2">
           <div className="font-medium text-red-800">Something went wrong</div>
-          <div className="text-sm mt-1 text-red-700">{error}</div>
+          <div className="text-sm text-red-700 leading-relaxed">{error}</div>
           <button
             onClick={loadDashboard}
-            className="mt-3 text-sm px-3 py-2 rounded-full bg-red-700 text-white hover:opacity-90 transition active:scale-[0.98]"
+            className="mt-2 text-sm px-3 py-2 rounded-full bg-red-700 text-white hover:opacity-90 transition active:scale-[0.98]"
           >
             Try again
           </button>
@@ -204,24 +208,23 @@ export default function Dashboard() {
 
       {!loading && !error && (
         <>
-          <Card className="space-y-2">
-            <div className="text-sm text-slate-500">Today’s prompt</div>
-            <div className="text-lg">{prompt || "No prompt found."}</div>
+          <Card className="space-y-3">
+            <div className={labelClass}>Today’s prompt</div>
+            <div className="text-lg font-medium leading-snug text-slate-900">
+              {prompt || "No prompt found."}
+            </div>
           </Card>
 
           {entry ? (
             <Card className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-slate-500">Your check-in</div>
-                  <div className="font-medium">
-                    Mood:{" "}
-                    <span className="font-semibold text-slate-900">
-                      {entry.mood}
-                    </span>
-                    /5{" "}
-                    <span className="text-slate-500">
-                      {mForEntry ? `• ${mForEntry.emoji} ${mForEntry.label}` : ""}
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className={labelClass}>Your check-in</div>
+                  <div className="text-lg font-semibold text-slate-900 leading-snug">
+                    {mForEntry ? `${mForEntry.emoji} ${mForEntry.label}` : "Mood"}
+                    <span className="text-slate-500 font-normal">
+                      {" "}
+                      ({entry.mood}/5)
                     </span>
                   </div>
                 </div>
@@ -246,18 +249,22 @@ export default function Dashboard() {
               </div>
 
               {!isEditing ? (
-                <>
-                  <div className="text-sm text-slate-500">Reflection</div>
-                  <div className="whitespace-pre-wrap">
+                <div className="space-y-2">
+                  <div className={labelClass}>Reflection</div>
+                  <div className="whitespace-pre-wrap leading-relaxed text-slate-900">
                     {entry.note || (
                       <span className="text-slate-400">No note.</span>
                     )}
                   </div>
-                </>
+
+                  <div className="text-xs text-slate-400">
+                    Saved for {entry.entry_date}
+                  </div>
+                </div>
               ) : (
                 <form className="space-y-4" onSubmit={handleSaveEdit}>
                   <div className="space-y-2">
-                    <div className="text-sm text-slate-500">Mood</div>
+                    <div className={labelClass}>Mood</div>
                     <div className="flex flex-wrap gap-2">
                       {MOODS.map((m) => (
                         <button
@@ -280,10 +287,10 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-sm text-slate-500">Reflection</label>
+                  <div className="space-y-2">
+                    <div className={labelClass}>Reflection</div>
                     <textarea
-                      className="w-full min-h-30 border border-slate-200 rounded-2xl p-3 bg-white/80 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      className="w-full min-h-30 border border-slate-200 rounded-2xl p-3 bg-white/80 focus:outline-none focus:ring-2 focus:ring-indigo-200 leading-relaxed"
                       value={editNote}
                       onChange={(e) => setEditNote(e.target.value)}
                       placeholder="Update your reflection…"
@@ -298,23 +305,21 @@ export default function Dashboard() {
                   </button>
                 </form>
               )}
-
-              <div className="text-xs text-slate-400">
-                Saved for {entry.entry_date}
-              </div>
             </Card>
           ) : (
             <Card className="space-y-4">
-              <div>
-                <div className="font-medium">Today’s check-in</div>
-                <p className="text-sm text-slate-600">
+              <div className="space-y-2">
+                <div className="text-lg font-semibold text-slate-900 leading-snug">
+                  Today’s check-in
+                </div>
+                <p className="text-sm text-slate-600 leading-relaxed">
                   Pick a mood and write a quick reflection.
                 </p>
               </div>
 
               <form className="space-y-4" onSubmit={handleCreateEntry}>
                 <div className="space-y-2">
-                  <div className="text-sm text-slate-500">Mood</div>
+                  <div className={labelClass}>Mood</div>
                   <div className="flex flex-wrap gap-2">
                     {MOODS.map((m) => (
                       <button
@@ -337,12 +342,10 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-sm text-slate-500">
-                    Reflection (optional)
-                  </label>
+                <div className="space-y-2">
+                  <div className={labelClass}>Reflection (optional)</div>
                   <textarea
-                    className="w-full min-h-30 border border-slate-200 rounded-2xl p-3 bg-white/80 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    className="w-full min-h-30 border border-slate-200 rounded-2xl p-3 bg-white/80 focus:outline-none focus:ring-2 focus:ring-indigo-200 leading-relaxed"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="Write a few sentences…"
