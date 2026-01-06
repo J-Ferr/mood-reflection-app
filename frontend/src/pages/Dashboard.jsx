@@ -7,6 +7,14 @@ import Page from "../components/Page";
 import Card from "../components/Card";
 import Nav from "../components/Nav";
 
+const MOODS = [
+  { value: 1, emoji: "😣", label: "Rough" },
+  { value: 2, emoji: "😕", label: "Low" },
+  { value: 3, emoji: "😐", label: "Okay" },
+  { value: 4, emoji: "🙂", label: "Good" },
+  { value: 5, emoji: "😄", label: "Great" },
+];
+
 export default function Dashboard() {
   const navigate = useNavigate();
 
@@ -154,6 +162,12 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const chipBase =
+    "px-4 py-2 rounded-full border text-sm transition flex items-center gap-2 " +
+    "hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.98]";
+
+  const mForEntry = entry ? MOODS.find((x) => x.value === entry.mood) : null;
+
   return (
     <Page
       title="Dashboard"
@@ -161,7 +175,7 @@ export default function Dashboard() {
       right={
         <button
           onClick={handleLogout}
-          className="text-sm px-3 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition shadow-sm"
+          className="text-sm px-3 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition shadow-sm active:scale-[0.98]"
         >
           Log out
         </button>
@@ -181,7 +195,7 @@ export default function Dashboard() {
           <div className="text-sm mt-1 text-red-700">{error}</div>
           <button
             onClick={loadDashboard}
-            className="mt-3 text-sm px-3 py-2 rounded-full bg-red-700 text-white hover:opacity-90 transition"
+            className="mt-3 text-sm px-3 py-2 rounded-full bg-red-700 text-white hover:opacity-90 transition active:scale-[0.98]"
           >
             Try again
           </button>
@@ -205,14 +219,17 @@ export default function Dashboard() {
                     <span className="font-semibold text-slate-900">
                       {entry.mood}
                     </span>
-                    /5
+                    /5{" "}
+                    <span className="text-slate-500">
+                      {mForEntry ? `• ${mForEntry.emoji} ${mForEntry.label}` : ""}
+                    </span>
                   </div>
                 </div>
 
                 {!isEditing ? (
                   <button
                     onClick={startEdit}
-                    className="text-sm px-3 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition shadow-sm"
+                    className="text-sm px-3 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition shadow-sm active:scale-[0.98]"
                   >
                     Edit
                   </button>
@@ -221,7 +238,7 @@ export default function Dashboard() {
                     onClick={cancelEdit}
                     type="button"
                     disabled={editing}
-                    className="text-sm px-3 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition shadow-sm disabled:opacity-60"
+                    className="text-sm px-3 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition shadow-sm disabled:opacity-60 active:scale-[0.98]"
                   >
                     Cancel
                   </button>
@@ -240,21 +257,24 @@ export default function Dashboard() {
               ) : (
                 <form className="space-y-4" onSubmit={handleSaveEdit}>
                   <div className="space-y-2">
-                    <div className="text-sm text-slate-500">Mood (1–5)</div>
+                    <div className="text-sm text-slate-500">Mood</div>
                     <div className="flex flex-wrap gap-2">
-                      {[1, 2, 3, 4, 5].map((n) => (
+                      {MOODS.map((m) => (
                         <button
                           type="button"
-                          key={n}
-                          onClick={() => setEditMood(n)}
+                          key={m.value}
+                          onClick={() => setEditMood(m.value)}
                           className={
-                            "px-3 py-2 rounded-full border text-sm transition " +
-                            (editMood === n
-                              ? "bg-slate-900 text-indigo-300 border-slate-900 font-semibold"
+                            chipBase +
+                            " " +
+                            (editMood === m.value
+                              ? "bg-slate-900 text-indigo-200 border-slate-900 font-semibold"
                               : "bg-white hover:bg-slate-50 border-slate-200")
                           }
+                          title={m.label}
                         >
-                          {n}
+                          <span className="text-base">{m.emoji}</span>
+                          <span>{m.label}</span>
                         </button>
                       ))}
                     </div>
@@ -272,7 +292,7 @@ export default function Dashboard() {
 
                   <button
                     disabled={editing}
-                    className="w-full px-4 py-2 rounded-full bg-slate-900 text-indigo-200 hover:opacity-95 transition shadow-sm disabled:opacity-60"
+                    className="w-full px-4 py-2 rounded-full bg-slate-900 text-indigo-200 hover:opacity-95 transition shadow-sm disabled:opacity-60 active:scale-[0.98]"
                   >
                     {editing ? "Saving…" : "Save changes"}
                   </button>
@@ -294,21 +314,24 @@ export default function Dashboard() {
 
               <form className="space-y-4" onSubmit={handleCreateEntry}>
                 <div className="space-y-2">
-                  <div className="text-sm text-slate-500">Mood (1–5)</div>
+                  <div className="text-sm text-slate-500">Mood</div>
                   <div className="flex flex-wrap gap-2">
-                    {[1, 2, 3, 4, 5].map((n) => (
+                    {MOODS.map((m) => (
                       <button
                         type="button"
-                        key={n}
-                        onClick={() => setMood(n)}
+                        key={m.value}
+                        onClick={() => setMood(m.value)}
                         className={
-                          "px-3 py-2 rounded-full border text-sm transition " +
-                          (mood === n
-                            ? "bg-slate-900 text-indigo-300 border-slate-900 font-semibold"
+                          chipBase +
+                          " " +
+                          (mood === m.value
+                            ? "bg-slate-900 text-indigo-200 border-slate-900 font-semibold"
                             : "bg-white hover:bg-slate-50 border-slate-200")
                         }
+                        title={m.label}
                       >
-                        {n}
+                        <span className="text-base">{m.emoji}</span>
+                        <span>{m.label}</span>
                       </button>
                     ))}
                   </div>
@@ -328,7 +351,7 @@ export default function Dashboard() {
 
                 <button
                   disabled={submitting}
-                  className="w-full px-4 py-2 rounded-full bg-slate-900 text-indigo-200 hover:opacity-95 transition shadow-sm disabled:opacity-60"
+                  className="w-full px-4 py-2 rounded-full bg-slate-900 text-indigo-200 hover:opacity-95 transition shadow-sm disabled:opacity-60 active:scale-[0.98]"
                 >
                   {submitting ? "Saving…" : "Submit today’s check-in"}
                 </button>
@@ -340,4 +363,3 @@ export default function Dashboard() {
     </Page>
   );
 }
-
