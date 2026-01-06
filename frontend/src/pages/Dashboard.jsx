@@ -161,6 +161,9 @@ export default function Dashboard() {
             <Link className="text-sm underline" to="/history">
               History
             </Link>
+            <Link className="text-sm underline" to="/stats">
+              Stats
+            </Link>
             <button
               onClick={handleLogout}
               className="text-sm px-3 py-2 rounded-lg border bg-white hover:bg-slate-50"

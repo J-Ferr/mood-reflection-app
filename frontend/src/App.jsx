@@ -4,6 +4,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import Stats from "./pages/Stats";
 
 export default function App() {
   return (
@@ -28,6 +29,14 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/stats"
+        element={
+          <ProtectedRoute>
+            <Stats />
+          </ProtectedRoute>
+        }
+      />  
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
