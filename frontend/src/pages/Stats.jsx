@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { clearToken } from "../auth/useAuth";
+
+import Page from "../components/Page";
+import Card from "../components/Card";
 import Nav from "../components/Nav";
 
 function formatDate(value) {
@@ -56,88 +59,79 @@ export default function Stats() {
   const worstDay = stats?.worstDay ?? null;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">Stats</h1>
-            <p className="text-sm text-slate-600">
-              Quick summary of your mood check-ins.
-            </p>
-          </div>
+    <Page title="Stats" subtitle="A quick snapshot of your mood trends.">
+      <Nav />
 
-          <Link
-            to="/dashboard"
-            className="text-sm px-3 py-2 rounded-lg border bg-white hover:bg-slate-50"
+      {loading && (
+        <Card>
+          <p className="text-slate-600">Loading stats…</p>
+        </Card>
+      )}
+
+      {!loading && error && (
+        <Card className="border-red-200 bg-red-50/80">
+          <div className="font-medium text-red-800">Couldn’t load stats</div>
+          <div className="text-sm mt-1 text-red-700">{error}</div>
+          <button
+            onClick={loadStats}
+            className="mt-3 text-sm px-3 py-2 rounded-full bg-red-700 text-white hover:opacity-90 transition"
           >
-            Back to dashboard
-          </Link>
-        </div>
+            Try again
+          </button>
+        </Card>
+      )}
 
-        <Nav />
-
-        {loading && (
-          <div className="bg-white border rounded-xl p-5 text-slate-600">
-            Loading stats…
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-red-800">
-            <div className="font-medium">Couldn’t load stats</div>
-            <div className="text-sm mt-1">{error}</div>
-            <button
-              onClick={loadStats}
-              className="mt-3 text-sm px-3 py-2 rounded-lg bg-red-700 text-white hover:opacity-90"
-            >
-              Try again
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <StatCard label="Total entries" value={totalEntries} />
-              <StatCard label="Average mood" value={`${averageMood}/5`} />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DayCard title="Best day" day={bestDay} />
-              <DayCard title="Worst day" day={worstDay} />
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value }) {
-  return (
-    <div className="bg-white border rounded-xl p-5">
-      <div className="text-sm text-slate-500">{label}</div>
-      <div className="text-3xl font-semibold mt-1">{value}</div>
-    </div>
-  );
-}
-
-function DayCard({ title, day }) {
-  return (
-    <div className="bg-white border rounded-xl p-5 space-y-2">
-      <div className="text-sm text-slate-500">{title}</div>
-
-      {!day ? (
-        <div className="text-slate-600">—</div>
-      ) : (
+      {!loading && !error && (
         <>
-          <div className="text-xl font-semibold">{day.mood}/5</div>
-          <div className="text-sm text-slate-600">
-            {formatDate(day.entry_date)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card>
+              <div className="text-sm text-slate-500">Total entries</div>
+              <div className="text-3xl font-semibold mt-1">{totalEntries}</div>
+            </Card>
+
+            <Card>
+              <div className="text-sm text-slate-500">Average mood</div>
+              <div className="text-3xl font-semibold mt-1">
+                {averageMood}/5
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className="space-y-2">
+              <div className="text-sm text-slate-500">Best day</div>
+              {!bestDay ? (
+                <div className="text-slate-600">—</div>
+              ) : (
+                <>
+                  <div className="text-xl font-semibold text-slate-900">
+                    {bestDay.mood}/5
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {formatDate(bestDay.entry_date)}
+                  </div>
+                </>
+              )}
+            </Card>
+
+            <Card className="space-y-2">
+              <div className="text-sm text-slate-500">Worst day</div>
+              {!worstDay ? (
+                <div className="text-slate-600">—</div>
+              ) : (
+                <>
+                  <div className="text-xl font-semibold text-slate-900">
+                    {worstDay.mood}/5
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {formatDate(worstDay.entry_date)}
+                  </div>
+                </>
+              )}
+            </Card>
           </div>
         </>
       )}
-    </div>
+    </Page>
   );
 }
-

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { clearToken } from "../auth/useAuth";
+
+import Page from "../components/Page";
+import Card from "../components/Card";
 import Nav from "../components/Nav";
 
 export default function Dashboard() {
@@ -43,7 +46,6 @@ export default function Dashboard() {
       const loadedEntry = entryRes.data?.entry || null;
       setEntry(loadedEntry);
 
-      // Prefill edit fields when an entry exists
       if (loadedEntry) {
         setEditMood(loadedEntry.mood ?? 3);
         setEditNote(loadedEntry.note ?? "");
@@ -82,7 +84,6 @@ export default function Dashboard() {
       const status = err?.response?.status;
 
       if (status === 409) {
-        // already submitted today → reload the entry from server
         await loadDashboard();
         return;
       }
@@ -154,158 +155,103 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <div>
-            <button
-              onClick={handleLogout}
-              className="text-sm px-3 py-2 rounded-lg border bg-white hover:bg-slate-50"
-            >
-              Log out
-            </button>
-          </div>
-        </div>
+    <Page
+      title="Dashboard"
+      subtitle="Daily check-in for your mood and reflection."
+      right={
+        <button
+          onClick={handleLogout}
+          className="text-sm px-3 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition shadow-sm"
+        >
+          Log out
+        </button>
+      }
+    >
+      <Nav />
 
-        <Nav />
+      {loading && (
+        <Card>
+          <p className="text-slate-600">Loading today’s check-in…</p>
+        </Card>
+      )}
 
-        {loading && (
-          <div className="bg-white border rounded-xl p-5">
-            <p className="text-slate-600">Loading today’s check-in…</p>
-          </div>
-        )}
+      {!loading && error && (
+        <Card className="border-red-200 bg-red-50/80">
+          <div className="font-medium text-red-800">Something went wrong</div>
+          <div className="text-sm mt-1 text-red-700">{error}</div>
+          <button
+            onClick={loadDashboard}
+            className="mt-3 text-sm px-3 py-2 rounded-full bg-red-700 text-white hover:opacity-90 transition"
+          >
+            Try again
+          </button>
+        </Card>
+      )}
 
-        {!loading && error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-red-800">
-            <div className="font-medium">Something went wrong</div>
-            <div className="text-sm mt-1">{error}</div>
-            <button
-              onClick={loadDashboard}
-              className="mt-3 text-sm px-3 py-2 rounded-lg bg-red-700 text-white hover:opacity-90"
-            >
-              Try again
-            </button>
-          </div>
-        )}
+      {!loading && !error && (
+        <>
+          <Card className="space-y-2">
+            <div className="text-sm text-slate-500">Today’s prompt</div>
+            <div className="text-lg">{prompt || "No prompt found."}</div>
+          </Card>
 
-        {!loading && !error && (
-          <>
-            <div className="bg-white border rounded-xl p-5 space-y-2">
-              <div className="text-sm text-slate-500">Today’s prompt</div>
-              <div className="text-lg">{prompt || "No prompt found."}</div>
-            </div>
-
-            {entry ? (
-              <div className="bg-white border rounded-xl p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm text-slate-500">Your check-in</div>
-                    <div className="font-medium">
-                      Mood:{" "}
-                      <span className="font-semibold">{entry.mood}</span>/5
-                    </div>
+          {entry ? (
+            <Card className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-slate-500">Your check-in</div>
+                  <div className="font-medium">
+                    Mood:{" "}
+                    <span className="font-semibold text-slate-900">
+                      {entry.mood}
+                    </span>
+                    /5
                   </div>
-
-                  {!isEditing ? (
-                    <button
-                      onClick={startEdit}
-                      className="text-sm px-3 py-2 rounded-lg border bg-white hover:bg-slate-50"
-                    >
-                      Edit
-                    </button>
-                  ) : (
-                    <button
-                      onClick={cancelEdit}
-                      type="button"
-                      className="text-sm px-3 py-2 rounded-lg border bg-white hover:bg-slate-50"
-                      disabled={editing}
-                    >
-                      Cancel
-                    </button>
-                  )}
                 </div>
 
                 {!isEditing ? (
-                  <>
-                    <div className="text-sm text-slate-500">Reflection</div>
-                    <div className="whitespace-pre-wrap">
-                      {entry.note || (
-                        <span className="text-slate-400">No note.</span>
-                      )}
-                    </div>
-                  </>
+                  <button
+                    onClick={startEdit}
+                    className="text-sm px-3 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition shadow-sm"
+                  >
+                    Edit
+                  </button>
                 ) : (
-                  <form className="space-y-4" onSubmit={handleSaveEdit}>
-                    <div className="space-y-2">
-                      <div className="text-sm text-slate-500">Mood (1–5)</div>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <button
-                            type="button"
-                            key={n}
-                            onClick={() => setEditMood(n)}
-                            className={
-                              "px-3 py-2 rounded-lg border text-sm " +
-                              (editMood === n
-                                ? "bg-slate-900 text-white border-slate-900"
-                                : "bg-white hover:bg-slate-50")
-                            }
-                          >
-                            {n}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-sm text-slate-500">
-                        Reflection
-                      </label>
-                      <textarea
-                        className="w-full min-h-30 border rounded-lg p-3"
-                        value={editNote}
-                        onChange={(e) => setEditNote(e.target.value)}
-                        placeholder="Update your reflection…"
-                      />
-                    </div>
-
-                    <button
-                      disabled={editing}
-                      className="w-full px-4 py-2 rounded-lg bg-slate-900 text-white hover:opacity-90 disabled:opacity-60"
-                    >
-                      {editing ? "Saving…" : "Save changes"}
-                    </button>
-                  </form>
+                  <button
+                    onClick={cancelEdit}
+                    type="button"
+                    disabled={editing}
+                    className="text-sm px-3 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition shadow-sm disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
                 )}
-
-                <div className="text-xs text-slate-400">
-                  Saved for {entry.entry_date}
-                </div>
               </div>
-            ) : (
-              <div className="bg-white border rounded-xl p-5 space-y-4">
-                <div>
-                  <div className="font-medium">Today’s check-in</div>
-                  <p className="text-sm text-slate-600">
-                    Pick a mood and write a quick reflection.
-                  </p>
-                </div>
 
-                <form className="space-y-4" onSubmit={handleCreateEntry}>
+              {!isEditing ? (
+                <>
+                  <div className="text-sm text-slate-500">Reflection</div>
+                  <div className="whitespace-pre-wrap">
+                    {entry.note || (
+                      <span className="text-slate-400">No note.</span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <form className="space-y-4" onSubmit={handleSaveEdit}>
                   <div className="space-y-2">
                     <div className="text-sm text-slate-500">Mood (1–5)</div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button
                           type="button"
                           key={n}
-                          onClick={() => setMood(n)}
+                          onClick={() => setEditMood(n)}
                           className={
-                            "px-3 py-2 rounded-lg border text-sm " +
-                            (mood === n
-                              ? "bg-slate-900 text-white border-slate-900"
-                              : "bg-white hover:bg-slate-50")
+                            "px-3 py-2 rounded-full border text-sm transition " +
+                            (editMood === n
+                              ? "bg-slate-900 text-indigo-300 border-slate-900 font-semibold"
+                              : "bg-white hover:bg-slate-50 border-slate-200")
                           }
                         >
                           {n}
@@ -315,29 +261,83 @@ export default function Dashboard() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-sm text-slate-500">
-                      Reflection (optional)
-                    </label>
+                    <label className="text-sm text-slate-500">Reflection</label>
                     <textarea
-                      className="w-full min-h-30 border rounded-lg p-3"
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="Write a few sentences…"
+                      className="w-full min-h-30 border border-slate-200 rounded-2xl p-3 bg-white/80 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
+                      placeholder="Update your reflection…"
                     />
                   </div>
 
                   <button
-                    disabled={submitting}
-                    className="w-full px-4 py-2 rounded-lg bg-slate-900 text-white hover:opacity-90 disabled:opacity-60"
+                    disabled={editing}
+                    className="w-full px-4 py-2 rounded-full bg-slate-900 text-indigo-200 hover:opacity-95 transition shadow-sm disabled:opacity-60"
                   >
-                    {submitting ? "Saving…" : "Submit today’s check-in"}
+                    {editing ? "Saving…" : "Save changes"}
                   </button>
                 </form>
+              )}
+
+              <div className="text-xs text-slate-400">
+                Saved for {entry.entry_date}
               </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+            </Card>
+          ) : (
+            <Card className="space-y-4">
+              <div>
+                <div className="font-medium">Today’s check-in</div>
+                <p className="text-sm text-slate-600">
+                  Pick a mood and write a quick reflection.
+                </p>
+              </div>
+
+              <form className="space-y-4" onSubmit={handleCreateEntry}>
+                <div className="space-y-2">
+                  <div className="text-sm text-slate-500">Mood (1–5)</div>
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        type="button"
+                        key={n}
+                        onClick={() => setMood(n)}
+                        className={
+                          "px-3 py-2 rounded-full border text-sm transition " +
+                          (mood === n
+                            ? "bg-slate-900 text-indigo-300 border-slate-900 font-semibold"
+                            : "bg-white hover:bg-slate-50 border-slate-200")
+                        }
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm text-slate-500">
+                    Reflection (optional)
+                  </label>
+                  <textarea
+                    className="w-full min-h-30 border border-slate-200 rounded-2xl p-3 bg-white/80 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Write a few sentences…"
+                  />
+                </div>
+
+                <button
+                  disabled={submitting}
+                  className="w-full px-4 py-2 rounded-full bg-slate-900 text-indigo-200 hover:opacity-95 transition shadow-sm disabled:opacity-60"
+                >
+                  {submitting ? "Saving…" : "Submit today’s check-in"}
+                </button>
+              </form>
+            </Card>
+          )}
+        </>
+      )}
+    </Page>
   );
 }
+
