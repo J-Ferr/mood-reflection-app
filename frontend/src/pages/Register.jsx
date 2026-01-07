@@ -21,7 +21,6 @@ export default function Register() {
         password,
       });
 
-      // After successful register, send them to login
       navigate("/login");
     } catch (err) {
       const msg =
@@ -46,17 +45,13 @@ export default function Register() {
           </p>
         </div>
 
-        {error && (
-          <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
-            {error}
-          </div>
-        )}
+        {error && <div className="alert-error">{error}</div>}
 
         <form className="space-y-3" onSubmit={handleSubmit}>
           <div className="space-y-1">
             <label className="text-sm font-medium">Email</label>
             <input
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -68,7 +63,7 @@ export default function Register() {
           <div className="space-y-1">
             <label className="text-sm font-medium">Password</label>
             <input
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -79,7 +74,7 @@ export default function Register() {
           </div>
 
           <button
-            className="w-full px-4 py-2 rounded-lg bg-slate-900 text-white hover:opacity-90 disabled:opacity-60"
+            className="btn btn-primary w-full rounded-xl"
             disabled={loading}
           >
             {loading ? "Creating..." : "Create account"}

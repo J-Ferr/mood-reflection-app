@@ -48,7 +48,7 @@ export default function Dashboard() {
       const res = await axiosClient.get("/stats/overview");
       setStats(res.data);
     } catch (err) {
-      // Keep this silent (stats should never block the dashboard)
+      // Stats should never block the dashboard
       if (err?.response?.status === 401) {
         clearToken();
         navigate("/login");
@@ -77,7 +77,6 @@ export default function Dashboard() {
         setEditNote(loaded.note ?? "");
       }
 
-      // Load stats alongside dashboard content
       await loadStats();
     } catch (err) {
       setError(err?.response?.data?.error || "Failed to load dashboard.");
@@ -105,11 +104,9 @@ export default function Dashboard() {
       setEntry(res.data.entry);
       setNote("");
 
-      // Refresh stats after a successful check-in
       await loadStats();
     } catch (err) {
       if (err?.response?.status === 409) {
-        // Already have an entry today — reload
         await loadDashboard();
         return;
       }
@@ -133,7 +130,6 @@ export default function Dashboard() {
       setEntry(res.data.entry);
       setIsEditing(false);
 
-      // Refresh stats (insight might change based on mood patterns)
       await loadStats();
     } catch (err) {
       setError("Failed to update entry.");
@@ -157,10 +153,7 @@ export default function Dashboard() {
       title="Dashboard"
       subtitle="Daily check-in for your mood and reflection."
       right={
-        <button
-          onClick={handleLogout}
-          className="text-sm px-3 py-2 rounded-full border bg-white"
-        >
+        <button onClick={handleLogout} className="btn btn-outline text-sm">
           Log out
         </button>
       }
@@ -169,18 +162,18 @@ export default function Dashboard() {
 
       {loading && <Card>Loading…</Card>}
 
-      {!loading && error && <Card>{error}</Card>}
+      {!loading && error && <Card className="space-y-3">{error}</Card>}
 
       {!loading && !error && (
         <>
           <Card className="space-y-3">
             <div className={labelClass}>Today’s prompt</div>
-            <div className="text-lg">{prompt}</div>
+            <div className="text-lg leading-relaxed">{prompt}</div>
           </Card>
 
-          {/* New: streak + insight */}
+          {/* streak + insight */}
           <div className="pt-2">
-            <div className="h-px w-full bg-slate-200/60 mb-2" />
+            <div className="h-px w-full bg-slate-200/60 mb-4" />
             <StatsCard stats={stats} />
           </div>
 
@@ -195,7 +188,7 @@ export default function Dashboard() {
 
               {!isEditing ? (
                 <>
-                  <div className="leading-relaxed whitespace-pre-wrap">
+                  <div className="leading-relaxed whitespace-pre-wrap text-slate-800">
                     {entry.note || "No reflection."}
                   </div>
 
@@ -205,7 +198,7 @@ export default function Dashboard() {
 
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="text-sm underline"
+                    className="text-sm underline text-slate-700"
                   >
                     Edit
                   </button>
@@ -215,12 +208,12 @@ export default function Dashboard() {
                   <textarea
                     value={editNote}
                     onChange={(e) => setEditNote(e.target.value)}
-                    className="w-full border rounded-xl p-3"
+                    className="textarea"
                   />
 
                   <button
                     disabled={editing}
-                    className="px-4 py-2 rounded-full bg-slate-900 text-white"
+                    className="btn btn-primary w-full sm:w-auto"
                   >
                     {editing ? "Saving..." : "Save"}
                   </button>
@@ -228,7 +221,7 @@ export default function Dashboard() {
               )}
             </Card>
           ) : (
-            <Card>
+            <Card className="space-y-4">
               <form onSubmit={handleCreateEntry} className="space-y-4">
                 <div className="flex gap-2 flex-wrap">
                   {MOODS.map((m) => (
@@ -236,8 +229,10 @@ export default function Dashboard() {
                       type="button"
                       key={m.value}
                       onClick={() => setMood(m.value)}
-                      className={`px-3 py-2 rounded-full border ${
-                        mood === m.value ? "bg-slate-900 text-white" : ""
+                      className={`btn btn-outline px-3 py-2 text-sm ${
+                        mood === m.value
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : ""
                       }`}
                     >
                       {m.emoji} {m.label}
@@ -248,12 +243,13 @@ export default function Dashboard() {
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-full border rounded-xl p-3"
+                  className="textarea"
+                  placeholder="Write a few words about what’s on your mind…"
                 />
 
                 <button
                   disabled={submitting}
-                  className="px-4 py-2 rounded-full bg-slate-900 text-white"
+                  className="btn btn-primary w-full sm:w-auto"
                 >
                   {submitting ? "Submitting..." : "Submit"}
                 </button>
