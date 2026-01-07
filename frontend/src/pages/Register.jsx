@@ -35,9 +35,16 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-      <div className="w-full max-w-md bg-white rounded-xl border p-6 space-y-4">
-        <h1 className="text-2xl font-semibold">Create account</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-indigo-100 to-slate-100 px-4">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur border border-slate-200/60 rounded-2xl p-6 shadow-lg shadow-slate-900/5 space-y-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Create account
+          </h1>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            A quiet place to start checking in with yourself.
+          </p>
+        </div>
 
         {error && (
           <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
@@ -49,7 +56,7 @@ export default function Register() {
           <div className="space-y-1">
             <label className="text-sm font-medium">Email</label>
             <input
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -61,7 +68,7 @@ export default function Register() {
           <div className="space-y-1">
             <label className="text-sm font-medium">Password</label>
             <input
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -89,4 +96,3 @@ export default function Register() {
     </div>
   );
 }
-
