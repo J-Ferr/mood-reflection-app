@@ -179,7 +179,10 @@ export default function Dashboard() {
           </Card>
 
           {/* New: streak + insight */}
-          <StatsCard stats={stats} />
+          <div className="pt-2">
+            <div className="h-px w-full bg-slate-200/60 mb-2" />
+            <StatsCard stats={stats} />
+          </div>
 
           {entry ? (
             <Card className="space-y-4">
