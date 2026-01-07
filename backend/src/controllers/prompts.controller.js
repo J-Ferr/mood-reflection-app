@@ -41,7 +41,9 @@ exports.getTodayPrompt = async (req, res, next) => {
   try {
     // This assumes your /prompts/today route is protected by auth middleware
     // and sets req.user.id
-    const userId = req.user?.id;
+    const userId = req.user?.id || req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
 
     // If somehow not authed, fall back to a deterministic global rotation
     const dayKey = getDayKeyUTC();

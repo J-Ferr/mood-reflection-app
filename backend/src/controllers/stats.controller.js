@@ -114,7 +114,9 @@ function makeInsight({ todayLogged, gapDays, currentStreak, moodsLast7, recentMo
 
 exports.getOverview = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id || req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
 
     // Pull enough history to compute streaks + simple insights
     const { rows } = await pool.query(
