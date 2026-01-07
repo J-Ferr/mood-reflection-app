@@ -1,7 +1,7 @@
 export default function Page({ title, subtitle, right, children }) {
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-100 via-slate-50 to-slate-200 p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-70 via-indigo-200 to-slate-70">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight leading-tight">
@@ -21,3 +21,4 @@ export default function Page({ title, subtitle, right, children }) {
     </div>
   );
 }
+
