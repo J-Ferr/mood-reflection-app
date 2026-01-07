@@ -32,7 +32,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-200 via-indigo-100 to-slate-200 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-indigo-100 to-slate-100 px-4">
       <div className="w-full max-w-md bg-white/95 backdrop-blur border border-slate-200/60 rounded-2xl p-6 shadow-lg shadow-slate-900/5 space-y-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Log in</h1>
