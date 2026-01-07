@@ -4,6 +4,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth.routes");
 const entriesRoutes = require("./routes/entries.routes");
 const promptsRoutes = require("./routes/prompts.routes");
+const statsRoutes = require("./routes/stats.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -20,6 +21,7 @@ app.get("/health", (req, res) => {
 app.use("/auth", authRoutes);
 app.use("/entries", entriesRoutes);
 app.use("/prompts", promptsRoutes);
+app.use("/stats", statsRoutes);
 
 // Error handler (last)
 app.use(errorHandler);

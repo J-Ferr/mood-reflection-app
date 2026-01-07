@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { clearToken } from "../auth/useAuth";
+import StatsCard from "../components/StatsCard";
 
 import Page from "../components/Page";
 import Card from "../components/Card";
@@ -35,9 +36,26 @@ export default function Dashboard() {
   const [editNote, setEditNote] = useState("");
   const [editing, setEditing] = useState(false);
 
+  const [stats, setStats] = useState(null);
+
   function handleLogout() {
     clearToken();
     navigate("/login");
+  }
+
+  async function loadStats() {
+    try {
+      const res = await axiosClient.get("/stats/overview");
+      setStats(res.data);
+    } catch (err) {
+      // Keep this silent (stats should never block the dashboard)
+      if (err?.response?.status === 401) {
+        clearToken();
+        navigate("/login");
+      } else {
+        console.error("Failed to load stats", err);
+      }
+    }
   }
 
   async function loadDashboard() {
@@ -58,6 +76,9 @@ export default function Dashboard() {
         setEditMood(loaded.mood ?? 3);
         setEditNote(loaded.note ?? "");
       }
+
+      // Load stats alongside dashboard content
+      await loadStats();
     } catch (err) {
       setError(err?.response?.data?.error || "Failed to load dashboard.");
       if (err?.response?.status === 401) {
@@ -72,6 +93,7 @@ export default function Dashboard() {
   async function handleCreateEntry(e) {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
 
     try {
       const res = await axiosClient.post("/entries", {
@@ -79,10 +101,15 @@ export default function Dashboard() {
         prompt,
         note,
       });
+
       setEntry(res.data.entry);
       setNote("");
+
+      // Refresh stats after a successful check-in
+      await loadStats();
     } catch (err) {
       if (err?.response?.status === 409) {
+        // Already have an entry today — reload
         await loadDashboard();
         return;
       }
@@ -95,16 +122,25 @@ export default function Dashboard() {
   async function handleSaveEdit(e) {
     e.preventDefault();
     setEditing(true);
+    setError("");
 
     try {
       const res = await axiosClient.patch("/entries/today", {
         mood: editMood,
         note: editNote,
       });
+
       setEntry(res.data.entry);
       setIsEditing(false);
-    } catch {
+
+      // Refresh stats (insight might change based on mood patterns)
+      await loadStats();
+    } catch (err) {
       setError("Failed to update entry.");
+      if (err?.response?.status === 401) {
+        clearToken();
+        navigate("/login");
+      }
     } finally {
       setEditing(false);
     }
@@ -114,9 +150,7 @@ export default function Dashboard() {
     loadDashboard();
   }, []);
 
-  const mForEntry = entry
-    ? MOODS.find((m) => m.value === entry.mood)
-    : null;
+  const mForEntry = entry ? MOODS.find((m) => m.value === entry.mood) : null;
 
   return (
     <Page
@@ -135,12 +169,17 @@ export default function Dashboard() {
 
       {loading && <Card>Loading…</Card>}
 
+      {!loading && error && <Card>{error}</Card>}
+
       {!loading && !error && (
         <>
           <Card className="space-y-3">
             <div className={labelClass}>Today’s prompt</div>
             <div className="text-lg">{prompt}</div>
           </Card>
+
+          {/* New: streak + insight */}
+          <StatsCard stats={stats} />
 
           {entry ? (
             <Card className="space-y-4">
@@ -175,8 +214,12 @@ export default function Dashboard() {
                     onChange={(e) => setEditNote(e.target.value)}
                     className="w-full border rounded-xl p-3"
                   />
-                  <button className="px-4 py-2 rounded-full bg-slate-900 text-white">
-                    Save
+
+                  <button
+                    disabled={editing}
+                    className="px-4 py-2 rounded-full bg-slate-900 text-white"
+                  >
+                    {editing ? "Saving..." : "Save"}
                   </button>
                 </form>
               )}
@@ -184,7 +227,7 @@ export default function Dashboard() {
           ) : (
             <Card>
               <form onSubmit={handleCreateEntry} className="space-y-4">
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {MOODS.map((m) => (
                     <button
                       type="button"
@@ -209,7 +252,7 @@ export default function Dashboard() {
                   disabled={submitting}
                   className="px-4 py-2 rounded-full bg-slate-900 text-white"
                 >
-                  Submit
+                  {submitting ? "Submitting..." : "Submit"}
                 </button>
               </form>
             </Card>
