@@ -17,6 +17,16 @@ app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
+// Disable ETag so API responses don't return 304 during dev
+app.set("etag", false);
+
+// Prevent caching for API routes
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
+
 // Routes
 app.use("/auth", authRoutes);
 app.use("/entries", entriesRoutes);

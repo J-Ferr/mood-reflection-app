@@ -2,8 +2,25 @@ const pool = require("../db/pool");
 
 // Helpers
 function toISODate(d) {
-  // d can be Date or string; always return YYYY-MM-DD
-  const date = d instanceof Date ? d : new Date(d);
+  if (d instanceof Date) {
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return d;
+  }
+
+  const date = new Date(d);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function toLocalISODate(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -18,7 +35,6 @@ function addDaysISO(iso, delta) {
 }
 
 function daysBetweenISO(a, b) {
-  // difference in days between iso dates (a - b)
   const [ay, am, ad] = a.split("-").map(Number);
   const [by, bm, bd] = b.split("-").map(Number);
   const A = new Date(ay, am - 1, ad);
@@ -28,15 +44,13 @@ function daysBetweenISO(a, b) {
 }
 
 function computeStreaks(sortedDescDates) {
-  // sortedDescDates: ["2026-01-06", "2026-01-05", ...]
   if (!sortedDescDates.length) {
     return { currentStreak: 0, longestStreak: 0, lastCheckIn: null };
   }
 
   const lastCheckIn = sortedDescDates[0];
-  const today = toISODate(new Date());
+  const today = toLocalISODate(new Date());
 
-  // Current streak counts consecutive days ending today
   let currentStreak = 0;
   if (lastCheckIn === today) {
     currentStreak = 1;
@@ -47,7 +61,6 @@ function computeStreaks(sortedDescDates) {
     }
   }
 
-  // Longest streak anywhere
   let longestStreak = 1;
   let run = 1;
 
@@ -65,9 +78,6 @@ function computeStreaks(sortedDescDates) {
 }
 
 function makeInsight({ todayLogged, gapDays, currentStreak, moodsLast7, recentMoods }) {
-  // moodsLast7: { calm: 3, anxious: 1 ... }
-  // recentMoods: ["calm","calm","happy", ...] (most recent first)
-
   if (!todayLogged && gapDays === 0) {
     return "No check-in yet today — a 30-second reflection still counts.";
   }
@@ -80,7 +90,6 @@ function makeInsight({ todayLogged, gapDays, currentStreak, moodsLast7, recentMo
     return `You’re on a ${currentStreak}-day check-in streak. That consistency is doing something.`;
   }
 
-  // Mood repetition insight
   const entries7 = Object.values(moodsLast7).reduce((a, b) => a + b, 0);
   if (entries7 >= 3) {
     const top = Object.entries(moodsLast7).sort((a, b) => b[1] - a[1])[0];
@@ -89,13 +98,11 @@ function makeInsight({ todayLogged, gapDays, currentStreak, moodsLast7, recentMo
     }
   }
 
-  // Variety insight
   const variety = Object.keys(moodsLast7).length;
   if (variety >= 4) {
     return `You’ve used ${variety} different moods this week — lots of emotional movement.`;
   }
 
-  // Recent mood trend (3 of last 5)
   const last5 = recentMoods.slice(0, 5);
   if (last5.length >= 3) {
     const freq = last5.reduce((acc, m) => {
@@ -108,17 +115,20 @@ function makeInsight({ todayLogged, gapDays, currentStreak, moodsLast7, recentMo
     }
   }
 
-  // fallback
   return "Small check-ins add up. Keep it simple, keep it honest.";
 }
 
 exports.getOverview = async (req, res) => {
   try {
-    const userId = req.user?.id || req.userId;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const userId =
+      req.user?.id ||
+      req.user?.userId ||
+      req.userId ||
+      req.user?.user_id;
 
+    const uid = Number(userId);
+    if (!uid) return res.status(401).json({ error: "Unauthorized" });
 
-    // Pull enough history to compute streaks + simple insights
     const { rows } = await pool.query(
       `
       SELECT entry_date, mood
@@ -127,13 +137,13 @@ exports.getOverview = async (req, res) => {
       ORDER BY entry_date DESC
       LIMIT 400
       `,
-      [userId]
+      [uid]
     );
 
-    const dates = rows.map(r => toISODate(r.entry_date));
-    const moods = rows.map(r => r.mood).filter(Boolean);
+    const dates = rows.map((r) => toISODate(r.entry_date));
+    const moods = rows.map((r) => r.mood).filter(Boolean);
 
-    const today = toISODate(new Date());
+    const today = toLocalISODate(new Date());
     const todayLogged = dates[0] === today;
 
     const lastCheckIn = dates[0] || null;
@@ -141,7 +151,6 @@ exports.getOverview = async (req, res) => {
 
     const { currentStreak, longestStreak } = computeStreaks(dates);
 
-    // Mood counts last 7 days
     const moodsLast7 = {};
     for (const r of rows) {
       const d = toISODate(r.entry_date);
@@ -157,16 +166,14 @@ exports.getOverview = async (req, res) => {
       gapDays,
       currentStreak,
       moodsLast7,
-      recentMoods: moods
+      recentMoods: moods,
     });
 
-    // A couple extra useful stats
     const totalEntries = rows.length;
 
-    // Month count
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const entriesThisMonth = dates.filter(d => d.startsWith(currentMonth)).length;
+    const entriesThisMonth = dates.filter((d) => d.startsWith(currentMonth)).length;
 
     return res.json({
       today,
@@ -178,10 +185,11 @@ exports.getOverview = async (req, res) => {
       lastCheckIn,
       gapDays,
       moodsLast7,
-      insight
+      insight,
     });
   } catch (err) {
     console.error("stats overview error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 };
+
