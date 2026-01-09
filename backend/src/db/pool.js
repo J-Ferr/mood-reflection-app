@@ -49,12 +49,5 @@ console.log("DB CONFIG (resolved):", {
   user: DATABASE_URL ? "(from DATABASE_URL)" : user,
 });
 
-// Prove connectivity
-pool
-  .query("SELECT current_database() AS db, inet_server_port() AS port, current_user AS user;")
-  .then((res) => console.log("POOL CONNECTED TO:", res.rows[0]))
-  .catch((err) => {
-    console.error("❌ DB CONNECTION FAILED:", err.message);
-  });
 
 module.exports = pool;
