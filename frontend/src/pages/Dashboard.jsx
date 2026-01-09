@@ -44,19 +44,20 @@ export default function Dashboard() {
   }
 
   async function loadStats() {
-    try {
-      const res = await axiosClient.get("/stats/overview");
-      setStats(res.data);
-    } catch (err) {
-      // Stats should never block the dashboard
-      if (err?.response?.status === 401) {
-        clearToken();
-        navigate("/login");
-      } else {
-        console.error("Failed to load stats", err);
-      }
+  try {
+    const res = await axiosClient.get("/entries/stats");
+    setStats(res.data);
+  } catch (err) {
+    // Stats should never block the dashboard
+    if (err?.response?.status === 401) {
+      clearToken();
+      navigate("/login");
+    } else {
+      console.error("Failed to load stats", err);
     }
   }
+}
+
 
   async function loadDashboard() {
     setLoading(true);
