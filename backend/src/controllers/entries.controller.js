@@ -149,12 +149,15 @@ exports.getEntryStats = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // 1️⃣ Average mood + total entries
+    // 1) Summary: total + avg + this month
     const summaryResult = await pool.query(
       `
       SELECT
         COUNT(*)::int AS "totalEntries",
-        ROUND(AVG(mood)::numeric, 2) AS "averageMood"
+        ROUND(AVG(mood)::numeric, 2) AS "averageMood",
+        COUNT(*) FILTER (
+          WHERE date_trunc('month', entry_date) = date_trunc('month', CURRENT_DATE)
+        )::int AS "thisMonthEntries"
       FROM daily_entries
       WHERE user_id = $1
       `,
@@ -163,7 +166,7 @@ exports.getEntryStats = async (req, res, next) => {
 
     const summary = summaryResult.rows[0];
 
-    // 2️⃣ Best day (highest mood)
+    // 2) Best day (highest mood)
     const bestDayResult = await pool.query(
       `
       SELECT entry_date, mood
@@ -175,7 +178,7 @@ exports.getEntryStats = async (req, res, next) => {
       [userId]
     );
 
-    // 3️⃣ Worst day (lowest mood)
+    // 3) Worst day (lowest mood)
     const worstDayResult = await pool.query(
       `
       SELECT entry_date, mood
@@ -187,16 +190,73 @@ exports.getEntryStats = async (req, res, next) => {
       [userId]
     );
 
+    // 4) Streaks (current + longest)
+    // We assume one entry per day per user (your app enforces this)
+    const datesResult = await pool.query(
+      `
+      SELECT entry_date::date AS entry_date
+      FROM daily_entries
+      WHERE user_id = $1
+      ORDER BY entry_date ASC
+      `,
+      [userId]
+    );
+
+    const dateStrings = datesResult.rows.map((r) => {
+      // r.entry_date is a Date-like value; normalize to YYYY-MM-DD
+      const d = new Date(r.entry_date);
+      return d.toISOString().slice(0, 10);
+    });
+
+    const dateSet = new Set(dateStrings);
+
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+
+    const addDays = (date, delta) => {
+      const d = new Date(date);
+      d.setDate(d.getDate() + delta);
+      return d;
+    };
+
+    // Current streak: start from today if entry exists, else from yesterday
+    let currentStreakDays = 0;
+    let cursor = dateSet.has(todayKey) ? today : addDays(today, -1);
+
+    while (dateSet.has(cursor.toISOString().slice(0, 10))) {
+      currentStreakDays += 1;
+      cursor = addDays(cursor, -1);
+    }
+
+    // Longest streak: scan ordered unique dates
+    // (dateStrings is already ordered ascending from query)
+    let longestStreakDays = 0;
+    let run = 0;
+
+    for (let i = 0; i < dateStrings.length; i++) {
+      if (i === 0) {
+        run = 1;
+      } else {
+        const prev = new Date(dateStrings[i - 1]);
+        const cur = new Date(dateStrings[i]);
+        const diffDays = Math.round((cur - prev) / (1000 * 60 * 60 * 24));
+        run = diffDays === 1 ? run + 1 : 1;
+      }
+      if (run > longestStreakDays) longestStreakDays = run;
+    }
+
     res.json({
       totalEntries: summary.totalEntries,
-      averageMood: summary.averageMood
-        ? Number(summary.averageMood)
-        : null,
+      thisMonthEntries: summary.thisMonthEntries,
+      averageMood: summary.averageMood ? Number(summary.averageMood) : null,
       bestDay: bestDayResult.rows[0] || null,
-      worstDay: worstDayResult.rows[0] || null
+      worstDay: worstDayResult.rows[0] || null,
+      currentStreakDays,
+      longestStreakDays,
     });
   } catch (err) {
     next(err);
   }
 };
+
 
