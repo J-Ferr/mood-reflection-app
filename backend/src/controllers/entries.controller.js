@@ -63,19 +63,24 @@ exports.listEntries = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
+
     const result = await pool.query(
       `SELECT id, entry_date, mood, prompt, note, created_at
        FROM daily_entries
        WHERE user_id = $1
-       ORDER BY entry_date DESC`,
-      [userId]
+       ORDER BY entry_date DESC
+       LIMIT $2 OFFSET $3`,
+      [userId, limit, offset]
     );
 
-    res.json({ entries: result.rows });
+    res.json({ entries: result.rows, limit, offset });
   } catch (err) {
     next(err);
   }
 };
+
 
 exports.getEntryByDate = async (req, res, next) => {
   try {
