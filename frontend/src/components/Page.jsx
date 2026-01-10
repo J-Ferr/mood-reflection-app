@@ -1,6 +1,6 @@
 export default function Page({ title, subtitle, right, children }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-100 to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-white via-slate-500 to-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">

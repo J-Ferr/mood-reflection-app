@@ -34,8 +34,8 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-indigo-100 to-slate-100 px-4">
-      <div className="w-full max-w-md bg-white/95 backdrop-blur border border-slate-200/60 rounded-2xl p-6 shadow-lg shadow-slate-900/5 space-y-4">
+    <div className="min-h-screen bg-linear-to-br from-white via-slate-500 to-white flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur border border-slate-200/60 rounded-2xl p-6 shadow-xl shadow-black/10 space-y-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">
             Create account
