@@ -6,6 +6,24 @@ This app focuses on simplicity, consistency, and thoughtful UX rather than overw
 
 ---
 
+## Screenshots
+
+### Authentication
+![Login](screenshots/Login.png)
+
+### Daily Check-In Flow
+![Dashboard Empty](screenshots/dashboard-empty.png)
+![Dashboard Complete](screenshots/dashboard-complete.png)
+![Dashboard Expanded](screenshots/dashboard-expanded.png)
+
+### History
+![History](screenshots/history.png)
+
+### Stats
+![Stats](screenshots/stats.png)
+
+---
+
 ##  Features
 
 -  **Authentication**
