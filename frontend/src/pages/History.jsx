@@ -212,14 +212,15 @@ export default function History() {
 
           {/* Right detail */}
           <Card className="space-y-3">
-            {!selected && (
+            {!selected && !detailLoading && !detailError && (
               <div className="text-slate-600">Select an entry</div>
             )}
 
+            {/* Always show selected if we have it */}
             {selected && (
               <>
                 <div className="text-sm text-slate-500">
-                  {formatDate(selected.entry_date)}
+                  {formatDate(selected.entry_date || selected.date)}
                 </div>
 
                 <div className="text-lg font-semibold text-slate-900">
@@ -227,7 +228,7 @@ export default function History() {
                 </div>
 
                 {selected.prompt?.trim() ? (
-                  <div className="text-sm text-slate-700">
+                  <div className="text-sm text-slate-600">
                     <span className="font-medium">Prompt:</span> {selected.prompt}
                   </div>
                 ) : null}
@@ -240,17 +241,18 @@ export default function History() {
               </>
             )}
 
-            {/* Non-blocking detail status */}
+            {/* Status messages should NOT hide content */}
             {detailLoading && (
-              <div className="text-xs text-slate-500">Refreshing entry…</div>
+              <div className="text-xs text-slate-500">Loading entry…</div>
             )}
 
             {!detailLoading && detailError && (
-              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">
                 {detailError}
               </div>
             )}
           </Card>
+
         </div>
       )}
     </Page>
