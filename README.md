@@ -6,6 +6,13 @@ This app focuses on simplicity, consistency, and thoughtful UX rather than overw
 
 ---
 
+## 🔗 Live Demo
+
+- **Frontend:** https://mood-reflection-frontend.onrender.com  
+- **API:** https://mood-reflection-api.onrender.com
+
+----
+
 ## Screenshots
 
 ### Authentication
@@ -47,6 +54,23 @@ This app focuses on simplicity, consistency, and thoughtful UX rather than overw
   - Consistent card system
   - Subtle micro-interactions
   - Designed to feel grounding, not distracting
+
+---
+
+## 🚀 Deployment
+
+- **Frontend:** Deployed as a static site on Render
+- **Backend API:** Node.js + Express deployed on Render
+- **Database:** PostgreSQL hosted on Render
+- **Authentication:** JWT-based auth with protected routes
+
+Environment variables are managed securely through Render.
+
+
+## 📝 Notes
+
+- The `entries` API maps to a `daily_entries` table in the database via a PostgreSQL view, allowing clean API naming while enforcing a one-entry-per-day constraint at the database level.
+
 
 ---
 
