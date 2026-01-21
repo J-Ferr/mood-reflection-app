@@ -10,8 +10,6 @@ import formatDate from "../utils/formatDate";
 
 function toYMD(value) {
   if (!value) return "";
-
-  // Already YYYY-MM-DD
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
 
   const d = new Date(value);
@@ -27,32 +25,13 @@ function normalizeEntry(raw) {
   if (!raw) return null;
 
   const entry_date =
-    raw.entry_date ??
-    raw.entryDate ??
-    raw.date ??
-    raw.entryDateYMD ??
-    raw.entry_date_ymd;
+    raw.entry_date ?? raw.entryDate ?? raw.date ?? raw.entryDateYMD ?? raw.entry_date_ymd;
 
-  const mood =
-    raw.mood ??
-    raw.mood_rating ??
-    raw.moodRating ??
-    raw.rating ??
-    raw.score;
+  const mood = raw.mood ?? raw.mood_rating ?? raw.moodRating ?? raw.rating ?? raw.score;
 
-  const note =
-    raw.note ??
-    raw.reflection ??
-    raw.text ??
-    raw.notes ??
-    raw.journal;
+  const note = raw.note ?? raw.reflection ?? raw.text ?? raw.notes ?? raw.journal;
 
-  const prompt =
-    raw.prompt ??
-    raw.question ??
-    raw.prompt_text ??
-    raw.promptText ??
-    raw.prompt_label;
+  const prompt = raw.prompt ?? raw.question ?? raw.prompt_text ?? raw.promptText ?? raw.prompt_label;
 
   return {
     ...raw,
@@ -70,12 +49,7 @@ export default function History() {
   const [entries, setEntries] = useState([]);
   const [error, setError] = useState("");
 
-  // We store the *entry object* (normalized), not just a date/id
   const [selected, setSelected] = useState(null);
-
-  // Optional: background refresh from /entries/:date (won’t block UI)
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState("");
 
   const sortedEntries = useMemo(() => {
     const list = Array.isArray(entries) ? entries : [];
@@ -97,6 +71,12 @@ export default function History() {
       const list = res.data?.entries ?? res.data ?? [];
       const arr = Array.isArray(list) ? list : [];
       setEntries(arr);
+
+      // Keep selection stable if possible after refresh
+      if (selected?.id) {
+        const next = arr.map(normalizeEntry).find((x) => x?.id === selected.id);
+        if (next) setSelected(next);
+      }
     } catch (err) {
       const status = err?.response?.status;
       setError(err?.response?.data?.error || err?.message || "Failed to load history.");
@@ -110,49 +90,6 @@ export default function History() {
     }
   }
 
-  // Optional background refresh (safe)
-  async function refreshDetailByDate(rawDateValue) {
-    setDetailLoading(true);
-    setDetailError("");
-
-    const ymd = toYMD(rawDateValue);
-    if (!ymd) {
-      setDetailError("Could not parse entry date.");
-      setDetailLoading(false);
-      return;
-    }
-
-    try {
-      const res = await axiosClient.get(`/entries/${ymd}`);
-      const raw = res.data?.entry ?? res.data ?? null;
-      const normalized = normalizeEntry(raw);
-      if (normalized) setSelected(normalized);
-    } catch (err) {
-      const status = err?.response?.status;
-      setDetailError(
-        err?.response?.data?.error || err?.message || "Failed to load entry details."
-      );
-
-      if (status === 401) {
-        clearToken();
-        navigate("/login");
-      }
-    } finally {
-      setDetailLoading(false);
-    }
-  }
-
-  function handleSelect(entry) {
-    const normalized = normalizeEntry(entry);
-    setSelected(normalized);
-    setDetailError("");
-
-    // Try to refresh details in background, but UI already has data
-    if (normalized?.entry_date) {
-      refreshDetailByDate(normalized.entry_date);
-    }
-  }
-
   useEffect(() => {
     loadEntries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -162,7 +99,9 @@ export default function History() {
     <Page title="History" subtitle="Browse past entries">
       <Nav />
 
-      <div className="text-xs text-red-600">HISTORY BUILD: v2-click-fix</div>
+<div className="text-xs text-red-600 font-mono">
+  HISTORY DIAG v3
+</div>
 
 
       {loading && <Card>Loading entries…</Card>}
@@ -189,17 +128,18 @@ export default function History() {
             ) : (
               <ul className="divide-y divide-slate-200">
                 {sortedEntries.map((e) => {
+                  const key = e.id ?? e.entry_date;
                   const isActive =
-                    selected?.entry_date && e.entry_date && selected.entry_date === e.entry_date;
+                    selected?.id ? selected.id === e.id : selected?.entry_date === e.entry_date;
 
                   return (
-                    <li key={e.id ?? e.entry_date}>
+                    <li key={key}>
                       <button
                         className={[
                           "w-full text-left p-4 transition",
                           isActive ? "bg-slate-100" : "hover:bg-slate-50",
                         ].join(" ")}
-                        onClick={() => handleSelect(e)}
+                        onClick={() => setSelected(e)}
                       >
                         {formatDate(e.entry_date)} — Mood {e.mood}/5
                       </button>
@@ -212,23 +152,18 @@ export default function History() {
 
           {/* Right detail */}
           <Card className="space-y-3">
-            {!selected && !detailLoading && !detailError && (
+            {!selected ? (
               <div className="text-slate-600">Select an entry</div>
-            )}
-
-            {/* Always show selected if we have it */}
-            {selected && (
+            ) : (
               <>
-                <div className="text-sm text-slate-500">
-                  {formatDate(selected.entry_date || selected.date)}
-                </div>
+                <div className="text-sm text-slate-500">{formatDate(selected.entry_date)}</div>
 
                 <div className="text-lg font-semibold text-slate-900">
                   Mood: {selected.mood}/5
                 </div>
 
                 {selected.prompt?.trim() ? (
-                  <div className="text-sm text-slate-600">
+                  <div className="text-sm text-slate-700">
                     <span className="font-medium">Prompt:</span> {selected.prompt}
                   </div>
                 ) : null}
@@ -240,22 +175,11 @@ export default function History() {
                 </div>
               </>
             )}
-
-            {/* Status messages should NOT hide content */}
-            {detailLoading && (
-              <div className="text-xs text-slate-500">Loading entry…</div>
-            )}
-
-            {!detailLoading && detailError && (
-              <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">
-                {detailError}
-              </div>
-            )}
           </Card>
-
         </div>
       )}
     </Page>
   );
 }
+
 
