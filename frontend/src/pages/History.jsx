@@ -99,10 +99,6 @@ export default function History() {
     <Page title="History" subtitle="Browse past entries">
       <Nav />
 
-<div className="text-xs text-red-600 font-mono">
-  HISTORY DIAG v3
-</div>
-
 
       {loading && <Card>Loading entries…</Card>}
 
