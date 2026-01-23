@@ -126,9 +126,10 @@ mood-reflection-app/
 
 ### Backend `.env`
 
-PPORT=5000
-DATABASE_URL=postgresql://postgres:Rozae1!@localhost:5433/mood_reflection
-JWT_SECRET=YOUR_MOOD_CHANGES_EVERYTHING!
+PORT=5000
+DATABASE_URL=postgresql://<user>:<password>@localhost:5432/<database_name>
+JWT_SECRET=your_jwt_secret_here
+
 
 
 ### Frontend
