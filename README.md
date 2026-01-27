@@ -101,26 +101,29 @@ Environment variables are managed securely through Render.
 
 ---
 
-##  Project Structure
+## Project Structure
 
+This repository is structured as a monorepo with a separate backend and frontend.
+
+```text
 mood-reflection-app/
-|-------- backend/
-|   |---src/
-|   |   |---controllers/
-|   |   |---routes/
-|   |   |---middleware/
-|   |   |---server.js
-|   |---sql/
-|   |---schema.sql
-|-------- frontend/
-|   |---src/
-|   |   |---pages/
-|   |   |---components/
-|   |   |---api/
-|   |   |---utils/
+├── backend/
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   └── server.js
+│   └── sql/
+│       └── schema.sql
+├── frontend/
+│   └── src/
+│       ├── pages/
+│       ├── components/
+│       ├── api/
+│       └── utils/
 
 
----
+
 
 ## ⚙️ Environment Setup
 
