@@ -209,9 +209,32 @@ export default function Dashboard() {
     >
       <Nav />
 
-      {loading && <Card>Loading…</Card>}
+      {loading && (
+        <Card className="space-y-2 animate-pulse">
+          <div className={labelClass}>Dashboard</div>
+          <div className="text-lg font-semibold text-slate-900">
+            Loading your check-in...
+          </div>
+          <div className="text-sm text-slate-600">
+            Pulling today's prompt and reflection data.
+          </div>
+        </Card>
+      )}
 
-      {!loading && error && <Card className="space-y-3">{error}</Card>}
+      {!loading && error && (
+        <Card className="space-y-3 border border-red-200 bg-red-50/70">
+          <div className="text-xs uppercase tracking-wide text-red-600">
+            Something went wrong
+          </div>
+          <div className="text-sm text-red-800">{error}</div>
+          <button
+            onClick={loadDashboard}
+            className="btn btn-outline w-full sm:w-auto"
+          >
+            Try again
+          </button>
+        </Card>
+      )}
 
       {!loading && !error && (
         <>
@@ -228,30 +251,31 @@ export default function Dashboard() {
 
           {/* If entry exists: show compact collapsible "Today's check-in" tile */}
           {entry && (
-            <Card className="space-y-3">
-              {/* Header row (always visible) */}
-              <button
-                type="button"
-                onClick={() => setIsEntryExpanded((v) => !v)}
-                className="w-full text-left rounded-lg transition-colors hover:bg-slate-50/70 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                aria-expanded={isEntryExpanded}
-              >
-                <div className="flex items-start justify-between gap-4 p-2 -m-2">
-                  <div className="space-y-1">
-                    <div className={labelClass}>Today’s check-in</div>
+            <>
+              {/* Section header */}
+              <div className="space-y-1 bg-white/40 backdrop-blur-sm rounded-xl p-4">
+                <div className={labelClass}>Today’s check-in</div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  You’ve already checked in today
+                </h2>
+                <p className="text-sm text-slate-600">
+                  You can review or update your reflection anytime today.
+                </p>
+              </div>
 
-                    <div className="text-base font-semibold flex items-center gap-2">
-                      <span className={`${justCompleted ? "lock-pop" : ""}`}>
-                        🔒
-                      </span>
+              <Card className="space-y-3">
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="text-base font-semibold flex items-center gap-2 text-slate-900">
+                      <span className={`${justCompleted ? "lock-pop" : ""}`}>🔒</span>
                       <span>
                         {mForEntry?.emoji} {mForEntry?.label} ({entry.mood}/5)
                       </span>
                     </div>
 
-                    {/* Preview (one line) */}
                     <div className="text-sm text-slate-600">
-                      {preview || "No reflection."}
+                      {preview || "No reflection added yet."}
                     </div>
 
                     <div className="text-xs text-slate-400">
@@ -259,100 +283,119 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="text-sm text-slate-500 pt-1">
-                    {isEntryExpanded ? "Hide" : "View"}
-                  </div>
+                  {/* Expand toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setIsEntryExpanded((prev) => !prev)}
+                    className="text-sm text-slate-500"
+                  >
+                    {isEntryExpanded ? "Hide full check-in" : "View full check-in"}
+                  </button>
                 </div>
-              </button>
 
-              {/* Collapsible content */}
-              <div
-                className={`transition-all duration-300 ease-out overflow-hidden ${
-                  isEntryExpanded
-                    ? "max-h-175 opacity-100"
-                    : "max-h-0 opacity-0"
-                }`}
-              >
-                <div className="pt-2 space-y-3">
-                  {!isEditing ? (
-                    <>
-                      <div>
-                        <div className={labelClass}>Full reflection</div>
-                        <div className="leading-relaxed whitespace-pre-wrap text-slate-800">
-                          {entry.note || "No reflection."}
+                {/* Expanded content */}
+                {isEntryExpanded && (
+                  <div className="pt-2 space-y-4">
+                    {!isEditing ? (
+                      <>
+                        {/* Mood */}
+                        <div className="space-y-2">
+                          <div className={labelClass}>Mood</div>
+                          <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+                            {mForEntry?.emoji} {mForEntry?.label}
+                          </span>
                         </div>
-                      </div>
 
-                      <button
-                        onClick={() => {
-                          setIsEditing(true);
-                          setIsEntryExpanded(true);
-                        }}
-                        className="text-sm underline text-slate-700"
-                      >
-                        Edit
-                      </button>
-                    </>
-                  ) : (
-                    <form onSubmit={handleSaveEdit} className="space-y-3">
-                      <div className="flex gap-2 flex-wrap">
-                        {MOODS.map((m) => (
+                        {/* Reflection */}
+                        <div className="space-y-2">
+                          <div className={labelClass}>Reflection</div>
+                          <div className="leading-relaxed whitespace-pre-wrap text-slate-800">
+                            {entry.note || "No reflection added yet."}
+                          </div>
+                        </div>
+
+                        {/* Edit button */}
+                        <button
+                          onClick={() => {
+                            setIsEditing(true);
+                            setIsEntryExpanded(true);
+                          }}
+                          className="text-sm underline text-slate-700"
+                        >
+                          Edit today’s check-in
+                        </button>
+                      </>
+                    ) : (
+                      <form onSubmit={handleSaveEdit} className="space-y-4">
+                        {/* Mood */}
+                        <div className={labelClass}>Mood</div>
+                        <div className="flex gap-2 flex-wrap">
+                          {MOODS.map((m) => (
+                            <button
+                              key={m.value}
+                              type="button"
+                              onClick={() => setEditMood(m.value)}
+                              className={`btn ${
+                                editMood === m.value ? "btn-primary" : "btn-outline"
+                              }`}
+                              disabled={editing}
+                            >
+                              {m.emoji} {m.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Reflection */}
+                        <div className={labelClass}>Reflection</div>
+                        <textarea
+                          value={editNote}
+                          onChange={(e) => setEditNote(e.target.value)}
+                          className="textarea"
+                          placeholder="Update your reflection..."
+                          disabled={editing}
+                        />
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={editing}
+                          >
+                            {editing ? "Saving changes..." : "Save changes"}
+                          </button>
                           <button
                             type="button"
-                            key={m.value}
-                            onClick={() => setEditMood(m.value)}
+                            className="btn btn-outline"
+                            onClick={() => setIsEditing(false)}
                             disabled={editing}
-                            className={`btn btn-outline px-3 py-2 text-sm ${
-                              editMood === m.value
-                                ? "bg-slate-900 text-white border-slate-900"
-                                : ""
-                            }`}
                           >
-                            {m.emoji} {m.label}
+                            Cancel
                           </button>
-                        ))}
-                      </div>
-
-                      <textarea
-                        value={editNote}
-                        onChange={(e) => setEditNote(e.target.value)}
-                        className="textarea"
-                        disabled={editing}
-                      />
-
-                      <div className="flex gap-2">
-                        <button
-                          disabled={editing}
-                          className="btn btn-primary w-full sm:w-auto"
-                        >
-                          {editing ? "Saving..." : "Save"}
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={editing}
-                          onClick={() => {
-                            setIsEditing(false);
-                            // reset edits to current entry values
-                            setEditMood(entry.mood ?? 3);
-                            setEditNote(entry.note ?? "");
-                          }}
-                          className="btn btn-outline w-full sm:w-auto"
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                        </div>
                     </form>
                   )}
                 </div>
-              </div>
+              )}
             </Card>
-          )}
+          </>
+        )}
 
           {/* If no entry exists: show form */}
           {!entry && (
-            <Card className="space-y-4">
+            <Card className="space-y-5">
+              <div className="space-y-1">
+                <div className={labelClass}>Today’s check-in</div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  How are you feeling right now?
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Choose your mood and add a short reflection if you want to.
+                </p>
+              </div>
+
               <form onSubmit={handleCreateEntry} className="space-y-4">
+                <div className={labelClass}>Mood</div>
                 <div className="flex gap-2 flex-wrap">
                   {MOODS.map((m) => (
                     <button
@@ -371,6 +414,7 @@ export default function Dashboard() {
                   ))}
                 </div>
 
+                <div className={labelClass}>Reflection</div>      
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -383,10 +427,11 @@ export default function Dashboard() {
                   disabled={submitting}
                   className="btn btn-primary w-full sm:w-auto"
                 >
-                  {submitting ? "Submitting..." : "Submit"}
+                  {submitting ? "Saving check-in..." : "Save today’s check-in"}
                 </button>
               </form>
             </Card>
+            
           )}
         </>
       )}

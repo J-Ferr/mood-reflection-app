@@ -42,6 +42,14 @@ function normalizeEntry(raw) {
   };
 }
 
+const MOODS = [
+  { value: 1, label: "Rough", emoji: "😣" },
+  { value: 2, label: "Low", emoji: "😕" },
+  { value: 3, label: "Okay", emoji: "🙂" },
+  { value: 4, label: "Good", emoji: "😊" },
+  { value: 5, label: "Great", emoji: "😄" },
+];
+
 export default function History() {
   const navigate = useNavigate();
 
@@ -50,6 +58,7 @@ export default function History() {
   const [error, setError] = useState("");
 
   const [selected, setSelected] = useState(null);
+  const selectedMood = MOODS.find((m) => Number(m.value) === Number(selected?.mood));
 
   const sortedEntries = useMemo(() => {
     const list = Array.isArray(entries) ? entries : [];
@@ -71,6 +80,16 @@ export default function History() {
       const list = res.data?.entries ?? res.data ?? [];
       const arr = Array.isArray(list) ? list : [];
       setEntries(arr);
+
+      const normalized = arr.map(normalizeEntry).filter(Boolean);
+      if (!selected && normalized.length > 0) {
+        const newest = [...normalized].sort((a, b) => {
+          const da = new Date(a.entry_date || 0).getTime();
+          const db = new Date(b.entry_date || 0).getTime();
+          return db - da;
+        })[0];
+        setSelected(newest);
+      }
 
       // Keep selection stable if possible after refresh
       if (selected?.id) {
@@ -118,11 +137,13 @@ export default function History() {
       {!loading && !error && (
         <div className="grid md:grid-cols-2 gap-6">
           {/* Left list */}
-          <Card className="p-0 overflow-hidden">
+          <Card className="p-3">
             {sortedEntries.length === 0 ? (
-              <div className="p-5 text-slate-600">No entries yet.</div>
+              <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-600">
+                No entries yet. Your past check-ins will show up here.
+              </div>
             ) : (
-              <ul className="divide-y divide-slate-200">
+              <ul className="space-y-3">
                 {sortedEntries.map((e) => {
                   const key = e.id ?? e.entry_date;
                   const isActive =
@@ -132,42 +153,69 @@ export default function History() {
                     <li key={key}>
                       <button
                         className={[
-                          "w-full text-left p-4 transition",
-                          isActive ? "bg-slate-100" : "hover:bg-slate-50",
-                        ].join(" ")}
-                        onClick={() => setSelected(e)}
-                      >
-                        {formatDate(e.entry_date)} — Mood {e.mood}/5
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </Card>
+                          "w-full rounded-2xl border p-4 text-left transition flex flex-col gap-1",
+                          isActive
+                          ? "border-slate-300 bg-white shadow-md ring-1 ring-slate-200"
+                          : "border-transparent hover:border-slate-200 hover:bg-slate-50",
+                      ].join(" ")}
+                      onClick={() => setSelected(e)}
+                    >
+                      <div className="text-sm font-medium text-slate-900">
+                        {formatDate(e.entry_date)}
+                      </div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        Mood {e.mood}/5
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
 
           {/* Right detail */}
-          <Card className="space-y-3">
+          <Card className="space-y-5 shadow-md bg-white/90 backdrop-blur-sm">
             {!selected ? (
-              <div className="text-slate-600">Select an entry</div>
+              <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-600">
+                Select a past check-in to view the full reflection.
+              </div>
             ) : (
               <>
-                <div className="text-sm text-slate-500">{formatDate(selected.entry_date)}</div>
+                <div className="space-y-3">
+                  <div className="text-sm text-slate-500">
+                    {formatDate(selected.entry_date)}
+                  </div>
 
-                <div className="text-lg font-semibold text-slate-900">
-                  Mood: {selected.mood}/5
+                  <div>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+                      {selectedMood?.emoji || "🙂"} {selectedMood?.label || `Mood ${selected.mood}/5`}
+                    </span>
+                  </div>
                 </div>
 
                 {selected.prompt?.trim() ? (
-                  <div className="text-sm text-slate-700">
-                    <span className="font-medium">Prompt:</span> {selected.prompt}
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase tracking-wide text-slate-500">
+                      Prompt
+                    </div>
+                    <div className="text-sm leading-6 text-slate-700">
+                      {selected.prompt}
+                    </div>
                   </div>
                 ) : null}
 
-                <div className="whitespace-pre-wrap leading-relaxed text-slate-900">
-                  {selected.note?.trim()
-                    ? selected.note
-                    : <span className="text-slate-400">No note.</span>}
+                <div className="space-y-2">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">
+                    Reflection
+                  </div>
+                  <div className="whitespace-pre-wrap leading-7 text-slate-800">
+                    {selected.note?.trim() ? (
+                      selected.note
+                    ) : (
+                      <span className="text-slate-400">No reflection added yet.</span>
+                    )}
+                  </div>
                 </div>
               </>
             )}
