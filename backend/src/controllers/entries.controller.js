@@ -51,7 +51,6 @@ exports.createEntry = async (req, res, next) => {
 
     res.status(201).json({ entry: result.rows[0] });
   } catch (err) {
-    // UNIQUE violation => user already created entry today
     if (err.code === "23505") {
       return res.status(409).json({ error: "You already submitted today’s check-in" });
     }
@@ -81,13 +80,11 @@ exports.listEntries = async (req, res, next) => {
   }
 };
 
-
 exports.getEntryByDate = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { date } = req.params;
 
-    // minimal date validation
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ error: "Date must be YYYY-MM-DD" });
     }
@@ -154,7 +151,7 @@ exports.getEntryStats = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // 1) Summary: total + avg + this month
+    // 1) Summary
     const summaryResult = await pool.query(
       `
       SELECT
@@ -171,7 +168,7 @@ exports.getEntryStats = async (req, res, next) => {
 
     const summary = summaryResult.rows[0];
 
-    // 2) Best day (highest mood)
+    // 2) Best day
     const bestDayResult = await pool.query(
       `
       SELECT entry_date, mood
@@ -183,7 +180,7 @@ exports.getEntryStats = async (req, res, next) => {
       [userId]
     );
 
-    // 3) Worst day (lowest mood)
+    // 3) Worst day
     const worstDayResult = await pool.query(
       `
       SELECT entry_date, mood
@@ -195,8 +192,62 @@ exports.getEntryStats = async (req, res, next) => {
       [userId]
     );
 
-    // 4) Streaks (current + longest)
-    // We assume one entry per day per user (your app enforces this)
+    // 4) Recent 7 entries
+    const recentEntriesResult = await pool.query(
+      `
+      SELECT id, entry_date, mood, prompt, note, created_at
+      FROM daily_entries
+      WHERE user_id = $1
+      ORDER BY entry_date DESC
+      LIMIT 7
+      `,
+      [userId]
+    );
+
+    const recentEntries = recentEntriesResult.rows;
+
+    // 5) Recent average mood
+    const recentAverageMood =
+      recentEntries.length > 0
+        ? Number(
+            (
+              recentEntries.reduce((sum, entry) => sum + Number(entry.mood), 0) /
+              recentEntries.length
+            ).toFixed(2)
+          )
+        : null;
+
+    // 6) Most common mood
+    const mostCommonMoodResult = await pool.query(
+      `
+      SELECT mood, COUNT(*)::int AS frequency
+      FROM daily_entries
+      WHERE user_id = $1
+      GROUP BY mood
+      ORDER BY frequency DESC, mood DESC
+      LIMIT 1
+      `,
+      [userId]
+    );
+
+    const mostCommonMoodValueRaw = mostCommonMoodResult.rows[0]?.mood;
+    const mostCommonMoodValue =
+      mostCommonMoodValueRaw !== undefined && mostCommonMoodValueRaw !== null
+        ? Number(mostCommonMoodValueRaw)
+        : null;
+
+    const moodLabelMap = {
+      1: "Rough",
+      2: "Low",
+      3: "Okay",
+      4: "Good",
+      5: "Great",
+    };
+
+    const mostCommonMood =
+      mostCommonMoodValue !== null ? moodLabelMap[mostCommonMoodValue] : null;
+
+    // 7) Streaks
     const datesResult = await pool.query(
       `
       SELECT entry_date::date AS entry_date
@@ -208,7 +259,6 @@ exports.getEntryStats = async (req, res, next) => {
     );
 
     const dateStrings = datesResult.rows.map((r) => {
-      // r.entry_date is a Date-like value; normalize to YYYY-MM-DD
       const d = new Date(r.entry_date);
       return d.toISOString().slice(0, 10);
     });
@@ -224,7 +274,6 @@ exports.getEntryStats = async (req, res, next) => {
       return d;
     };
 
-    // Current streak: start from today if entry exists, else from yesterday
     let currentStreakDays = 0;
     let cursor = dateSet.has(todayKey) ? today : addDays(today, -1);
 
@@ -233,8 +282,6 @@ exports.getEntryStats = async (req, res, next) => {
       cursor = addDays(cursor, -1);
     }
 
-    // Longest streak: scan ordered unique dates
-    // (dateStrings is already ordered ascending from query)
     let longestStreakDays = 0;
     let run = 0;
 
@@ -247,13 +294,18 @@ exports.getEntryStats = async (req, res, next) => {
         const diffDays = Math.round((cur - prev) / (1000 * 60 * 60 * 24));
         run = diffDays === 1 ? run + 1 : 1;
       }
+
       if (run > longestStreakDays) longestStreakDays = run;
     }
 
     res.json({
-      totalEntries: summary.totalEntries,
-      thisMonthEntries: summary.thisMonthEntries,
-      averageMood: summary.averageMood ? Number(summary.averageMood) : null,
+      totalEntries: Number(summary.totalEntries) || 0,
+      thisMonthEntries: Number(summary.thisMonthEntries) || 0,
+      averageMood: summary.averageMood !== null ? Number(summary.averageMood) : null,
+      recentAverageMood,
+      recentEntries,
+      mostCommonMood,
+      mostCommonMoodValue,
       bestDay: bestDayResult.rows[0] || null,
       worstDay: worstDayResult.rows[0] || null,
       currentStreakDays,
@@ -263,5 +315,3 @@ exports.getEntryStats = async (req, res, next) => {
     next(err);
   }
 };
-
-
