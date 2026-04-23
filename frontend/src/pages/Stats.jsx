@@ -8,11 +8,36 @@ import Card from "../components/Card";
 import Nav from "../components/Nav";
 
 const MOOD_META = {
-  1: { emoji: "😞", label: "Rough", textClass: "text-rose-400", bgClass: "bg-rose-500/10 border-rose-400/20" },
-  2: { emoji: "😕", label: "Low", textClass: "text-orange-400", bgClass: "bg-orange-500/10 border-orange-400/20" },
-  3: { emoji: "😐", label: "Okay", textClass: "text-amber-300", bgClass: "bg-amber-500/10 border-amber-300/20" },
-  4: { emoji: "🙂", label: "Good", textClass: "text-emerald-400", bgClass: "bg-emerald-500/10 border-emerald-400/20" },
-  5: { emoji: "😊", label: "Great", textClass: "text-cyan-300", bgClass: "bg-cyan-500/10 border-cyan-300/20" },
+  1: {
+    emoji: "😞",
+    label: "Rough",
+    textClass: "text-rose-400",
+    bgClass: "bg-rose-500/10 border-rose-400/20",
+  },
+  2: {
+    emoji: "😕",
+    label: "Low",
+    textClass: "text-orange-400",
+    bgClass: "bg-orange-500/10 border-orange-400/20",
+  },
+  3: {
+    emoji: "😐",
+    label: "Okay",
+    textClass: "text-amber-300",
+    bgClass: "bg-amber-500/10 border-amber-300/20",
+  },
+  4: {
+    emoji: "🙂",
+    label: "Good",
+    textClass: "text-emerald-400",
+    bgClass: "bg-emerald-500/10 border-emerald-400/20",
+  },
+  5: {
+    emoji: "😊",
+    label: "Great",
+    textClass: "text-cyan-300",
+    bgClass: "bg-cyan-500/10 border-cyan-300/20",
+  },
 };
 
 function clampMood(value) {
@@ -34,9 +59,7 @@ function clampMood(value) {
       happy: 5,
     };
 
-    if (moodMap[normalized]) {
-      return moodMap[normalized];
-    }
+    if (moodMap[normalized]) return moodMap[normalized];
 
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) return null;
@@ -66,6 +89,7 @@ function getAverageLabel(value) {
 
 function getMoodInfoFromValue(value) {
   const mood = clampMood(value);
+
   if (!mood) {
     return {
       emoji: "—",
@@ -74,6 +98,7 @@ function getMoodInfoFromValue(value) {
       bgClass: "bg-white/5 border-white/10",
     };
   }
+
   return MOOD_META[mood];
 }
 
@@ -90,9 +115,8 @@ function getMoodInfoFromLabel(label) {
   const normalized = String(label).trim().toLowerCase();
 
   const match =
-    Object.values(MOOD_META).find(
-      (m) => m.label.toLowerCase() === normalized
-    ) || null;
+    Object.values(MOOD_META).find((m) => m.label.toLowerCase() === normalized) ||
+    null;
 
   return (
     match || {
@@ -109,16 +133,8 @@ function deriveMostCommonMood(stats, recentEntries) {
     return getMoodInfoFromValue(stats.mostCommonMoodValue);
   }
 
-  if (stats?.most_common_mood_value !== undefined && stats?.most_common_mood_value !== null) {
-    return getMoodInfoFromValue(stats.most_common_mood_value);
-  }
-
   if (stats?.mostCommonMood) {
     return getMoodInfoFromLabel(stats.mostCommonMood);
-  }
-
-  if (stats?.most_common_mood) {
-    return getMoodInfoFromLabel(stats.most_common_mood);
   }
 
   if (!recentEntries.length) {
@@ -133,16 +149,7 @@ function deriveMostCommonMood(stats, recentEntries) {
   const counts = {};
 
   for (const entry of recentEntries) {
-    const mood = clampMood(
-      entry.moodValue ??
-        entry.mood_value ??
-        entry.mood ??
-        entry.rating ??
-        entry.mood_label ??
-        entry.moodLabel ??
-        entry.label
-    );
-
+    const mood = clampMood(entry.moodValue ?? entry.mood);
     if (!mood) continue;
     counts[mood] = (counts[mood] || 0) + 1;
   }
@@ -161,72 +168,13 @@ function deriveMostCommonMood(stats, recentEntries) {
   return getMoodInfoFromValue(Number(winner[0]));
 }
 
-function buildInsight({
-  totalEntries,
-  averageMood,
-  recentAverageMood,
-  mostCommonMoodLabel,
-  trendEntries,
-}) {
-  if (!totalEntries) {
-    return "No stats yet — start checking in daily and your mood patterns will begin to show here.";
-  }
-
-  const avg = Number(averageMood);
-  const recent = Number(recentAverageMood);
-  const recentCount = trendEntries.length;
-
-  if (recentCount >= 4 && Number.isFinite(avg) && Number.isFinite(recent)) {
-    const diff = recent - avg;
-
-    if (diff >= 0.5) {
-      return `Your recent mood is trending upward compared to your overall average. You’ve been feeling better lately, which is a strong sign of momentum.`;
-    }
-
-    if (diff <= -0.5) {
-      return `Your recent mood dipped below your usual pattern a bit. Nothing dramatic, but it may be a good moment to slow down and check in with yourself.`;
-    }
-  }
-
-  if (Number.isFinite(avg) && avg >= 4.2) {
-    return `Your check-ins have been strongly positive overall. You seem to be in a pretty grounded, steady stretch right now.`;
-  }
-
-  if (Number.isFinite(avg) && avg >= 3.2) {
-    return `Your recent mood trend looks fairly balanced. You’re staying pretty steady overall, even if some days feel better than others.`;
-  }
-
-  if (Number.isFinite(avg) && avg < 3.2) {
-    return `Your entries suggest things have felt a little heavier lately. That doesn’t mean you’re stuck there — it just means your reflection is catching something real.`;
-  }
-
-  if (mostCommonMoodLabel) {
-    return `Your most common mood so far has been ${mostCommonMoodLabel.toLowerCase()}, which gives you a good starting point for spotting patterns over time.`;
-  }
-
-  return "Your mood history is starting to form a pattern. Keep checking in consistently so the app can give you sharper insights.";
-}
-
 function normalizeTrendEntries(stats) {
-  const possibleEntries =
-    stats?.recentEntries ||
-    stats?.recent_entries ||
-    stats?.last7Entries ||
-    stats?.last_7_entries ||
-    [];
+  const possibleEntries = stats?.recentEntries || [];
 
   if (Array.isArray(possibleEntries) && possibleEntries.length) {
     return possibleEntries
       .map((entry, index) => {
-        const moodValue = clampMood(
-          entry.moodValue ??
-            entry.mood_value ??
-            entry.mood ??
-            entry.rating ??
-            entry.mood_label ??
-            entry.moodLabel ??
-            entry.label
-        );
+        const moodValue = clampMood(entry.mood);
 
         return {
           id: entry.id ?? `${index}-${moodValue ?? "mood"}`,
@@ -237,36 +185,82 @@ function normalizeTrendEntries(stats) {
       .slice(0, 7);
   }
 
-  if (Array.isArray(stats?.last7MoodValues) && stats.last7MoodValues.length) {
-    return stats.last7MoodValues
-      .map((value, index) => ({
-        id: `last7-${index}`,
-        moodValue: clampMood(value),
-      }))
-      .filter((entry) => entry.moodValue !== null)
-      .slice(0, 7);
-  }
-
-  if (Array.isArray(stats?.last_7_mood_values) && stats.last_7_mood_values.length) {
-    return stats.last_7_mood_values
-      .map((value, index) => ({
-        id: `last7-${index}`,
-        moodValue: clampMood(value),
-      }))
-      .filter((entry) => entry.moodValue !== null)
-      .slice(0, 7);
-  }
-
   return [];
+}
+
+function normalizeMoodBreakdown(stats) {
+  const breakdown = Array.isArray(stats?.moodBreakdown) ? stats.moodBreakdown : [];
+
+  return [1, 2, 3, 4, 5].map((mood) => {
+    const existing = breakdown.find((item) => Number(item.mood) === mood);
+    const info = getMoodInfoFromValue(mood);
+
+    return {
+      mood,
+      label: existing?.label || info.label,
+      count: Number(existing?.count ?? 0),
+      percentage: Number(existing?.percentage ?? 0),
+      ...info,
+    };
+  });
+}
+
+function buildInsight({
+  totalEntries,
+  averageMood,
+  recentAverageMood,
+  currentStreakDays,
+  moodBreakdown,
+  trendEntries,
+}) {
+  if (!totalEntries) {
+    return "No stats yet — start checking in daily and your mood patterns will begin to show here.";
+  }
+
+  const avg = Number(averageMood);
+  const recent = Number(recentAverageMood);
+  const recentCount = trendEntries.length;
+
+  const topMood = [...moodBreakdown].sort((a, b) => b.count - a.count)[0];
+
+  if (recentCount >= 4 && Number.isFinite(avg) && Number.isFinite(recent)) {
+    const diff = recent - avg;
+
+    if (diff >= 0.5) {
+      return "Your recent mood is trending upward compared to your overall average. You’ve been feeling better lately, which is a strong sign of momentum.";
+    }
+
+    if (diff <= -0.5) {
+      return "Your recent mood dipped below your usual pattern a bit. Nothing dramatic, but it may be a good moment to slow down and check in with yourself.";
+    }
+  }
+
+  if (currentStreakDays >= 5) {
+    return `You’re building strong consistency with a ${currentStreakDays}-day streak. That kind of daily reflection makes your mood patterns much easier to understand over time.`;
+  }
+
+  if (topMood?.count > 0 && topMood.percentage >= 50) {
+    return `${topMood.label} has been your dominant mood so far, showing up in about ${topMood.percentage}% of your entries. That gives you a pretty clear emotional pattern to reflect on.`;
+  }
+
+  if (Number.isFinite(avg) && avg >= 4.2) {
+    return "Your check-ins have been strongly positive overall. You seem to be in a pretty grounded, steady stretch right now.";
+  }
+
+  if (Number.isFinite(avg) && avg >= 3.2) {
+    return "Your recent mood trend looks fairly balanced. You’re staying pretty steady overall, even if some days feel better than others.";
+  }
+
+  if (Number.isFinite(avg) && avg < 3.2) {
+    return "Your entries suggest things have felt a little heavier lately. That doesn’t mean you’re stuck there — it just means your reflection is catching something real.";
+  }
+
+  return "Your mood history is starting to form a pattern. Keep checking in consistently so the app can give you sharper insights.";
 }
 
 function MoodTrend({ entries }) {
   if (!entries.length) {
-    return (
-      <p className="mt-4 text-sm text-slate-500">
-        No recent trend yet.
-      </p>
-    );
+    return <p className="mt-4 text-sm text-slate-500">No recent trend yet.</p>;
   }
 
   return (
@@ -287,16 +281,48 @@ function MoodTrend({ entries }) {
                 style={{ height: `${height}px` }}
               />
               <span className="text-lg">{info.emoji}</span>
-              <span className="text-[10px] text-slate-500">
-                {index + 1}
-              </span>
+              <span className="text-[10px] text-slate-500">{index + 1}</span>
             </div>
           );
         })}
       </div>
-      <p className="mt-3 text-xs text-slate-500">
-        Most recent 7 check-ins
-      </p>
+      <p className="mt-3 text-xs text-slate-500">Most recent 7 check-ins</p>
+    </div>
+  );
+}
+
+function MoodBreakdown({ items }) {
+  const hasData = items.some((item) => item.count > 0);
+
+  if (!hasData) {
+    return <p className="mt-4 text-sm text-slate-500">No mood breakdown yet.</p>;
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      {items
+        .slice()
+        .sort((a, b) => b.count - a.count || b.mood - a.mood)
+        .map((item) => (
+          <div key={item.mood}>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{item.emoji}</span>
+                <span className="font-medium text-slate-700">{item.label}</span>
+              </div>
+              <div className="text-sm text-slate-500">
+                {item.count} {item.count === 1 ? "entry" : "entries"} · {item.percentage}%
+              </div>
+            </div>
+
+            <div className="h-3 overflow-hidden rounded-full bg-slate-200/70">
+              <div
+                className="h-full rounded-full bg-slate-500/70 transition-all"
+                style={{ width: `${item.percentage}%` }}
+              />
+            </div>
+          </div>
+        ))}
     </div>
   );
 }
@@ -326,29 +352,22 @@ export default function Stats() {
   }, [navigate]);
 
   const computed = useMemo(() => {
-    const totalEntries = Number(stats?.totalEntries ?? stats?.total_entries ?? 0);
-
-    const averageMood = Number(
-      stats?.averageMood ?? stats?.average_mood ?? stats?.avgMood ?? 0
-    );
-
-    const recentAverageMood = Number(
-      stats?.recentAverageMood ??
-        stats?.recent_average_mood ??
-        stats?.last7AverageMood ??
-        stats?.last7_average_mood ??
-        averageMood ??
-        0
-    );
+    const totalEntries = Number(stats?.totalEntries ?? 0);
+    const averageMood = Number(stats?.averageMood ?? 0);
+    const recentAverageMood = Number(stats?.recentAverageMood ?? averageMood ?? 0);
+    const currentStreakDays = Number(stats?.currentStreakDays ?? 0);
+    const longestStreakDays = Number(stats?.longestStreakDays ?? 0);
 
     const trendEntries = normalizeTrendEntries(stats);
     const mostCommonMood = deriveMostCommonMood(stats, trendEntries);
+    const moodBreakdown = normalizeMoodBreakdown(stats);
 
     const insight = buildInsight({
       totalEntries,
       averageMood,
       recentAverageMood,
-      mostCommonMoodLabel: mostCommonMood.label,
+      currentStreakDays,
+      moodBreakdown,
       trendEntries,
     });
 
@@ -356,8 +375,11 @@ export default function Stats() {
       totalEntries,
       averageMood,
       recentAverageMood,
+      currentStreakDays,
+      longestStreakDays,
       trendEntries,
       mostCommonMood,
+      moodBreakdown,
       insight,
     };
   }, [stats]);
@@ -379,7 +401,7 @@ export default function Stats() {
     <Page title="Stats" subtitle="Mood overview">
       <Nav />
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <p className="text-sm uppercase tracking-wide text-slate-500">
             Total entries
@@ -404,6 +426,32 @@ export default function Stats() {
           </p>
         </Card>
 
+        <Card>
+          <p className="text-sm uppercase tracking-wide text-slate-500">
+            Current streak
+          </p>
+          <h2 className="mt-3 text-4xl font-semibold text-slate-900">
+            {computed.currentStreakDays}
+          </h2>
+          <p className="mt-3 text-base text-slate-500">
+            Daily check-ins in a row.
+          </p>
+        </Card>
+
+        <Card>
+          <p className="text-sm uppercase tracking-wide text-slate-500">
+            Longest streak
+          </p>
+          <h2 className="mt-3 text-4xl font-semibold text-slate-900">
+            {computed.longestStreakDays}
+          </h2>
+          <p className="mt-3 text-base text-slate-500">
+            Your best reflection streak so far.
+          </p>
+        </Card>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card className={`border ${computed.mostCommonMood.bgClass}`}>
           <p className="text-sm uppercase tracking-wide text-slate-500">
             Most common mood
@@ -429,8 +477,19 @@ export default function Stats() {
           <p className="mt-3 text-base text-slate-500">
             Your recent average mood based on the latest entries.
           </p>
-
           <MoodTrend entries={computed.trendEntries} />
+        </Card>
+      </div>
+
+      <div className="mt-4">
+        <Card>
+          <p className="text-sm uppercase tracking-wide text-slate-500">
+            Mood breakdown
+          </p>
+          <p className="mt-3 text-base text-slate-500">
+            See which moods show up most often across all your check-ins.
+          </p>
+          <MoodBreakdown items={computed.moodBreakdown} />
         </Card>
       </div>
 

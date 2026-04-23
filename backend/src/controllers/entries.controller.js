@@ -247,7 +247,38 @@ exports.getEntryStats = async (req, res, next) => {
     const mostCommonMood =
       mostCommonMoodValue !== null ? moodLabelMap[mostCommonMoodValue] : null;
 
-    // 7) Streaks
+    // 7) Mood breakdown
+    const moodBreakdownResult = await pool.query(
+      `
+      SELECT mood, COUNT(*)::int AS count
+      FROM daily_entries
+      WHERE user_id = $1
+      GROUP BY mood
+      ORDER BY mood ASC
+      `,
+      [userId]
+    );
+
+    const breakdownMap = new Map(
+      moodBreakdownResult.rows.map((row) => [Number(row.mood), Number(row.count)])
+    );
+
+    const totalEntries = Number(summary.totalEntries) || 0;
+
+    const moodBreakdown = [1, 2, 3, 4, 5].map((mood) => {
+      const count = breakdownMap.get(mood) || 0;
+      const percentage =
+        totalEntries > 0 ? Number(((count / totalEntries) * 100).toFixed(1)) : 0;
+
+      return {
+        mood,
+        label: moodLabelMap[mood],
+        count,
+        percentage,
+      };
+    });
+
+    // 8) Streaks
     const datesResult = await pool.query(
       `
       SELECT entry_date::date AS entry_date
@@ -299,13 +330,14 @@ exports.getEntryStats = async (req, res, next) => {
     }
 
     res.json({
-      totalEntries: Number(summary.totalEntries) || 0,
+      totalEntries,
       thisMonthEntries: Number(summary.thisMonthEntries) || 0,
       averageMood: summary.averageMood !== null ? Number(summary.averageMood) : null,
       recentAverageMood,
       recentEntries,
       mostCommonMood,
       mostCommonMoodValue,
+      moodBreakdown,
       bestDay: bestDayResult.rows[0] || null,
       worstDay: worstDayResult.rows[0] || null,
       currentStreakDays,
