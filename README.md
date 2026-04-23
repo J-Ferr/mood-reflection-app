@@ -27,7 +27,8 @@ This app focuses on simplicity, consistency, and thoughtful UX rather than overw
 ![History](screenshots/history.png)
 
 ### Stats
-![Stats](screenshots/stats.png)
+![Stats](screenshots/stats1.png)
+![Stats](screenshots/stats2.png)
 
 ---
 
