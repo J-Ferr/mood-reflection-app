@@ -5,12 +5,14 @@ import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Stats from "./pages/Stats";
+import ForgotPassword from "./pages/ForgotPassword";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/register" element={<Register />} />
 
       <Route
