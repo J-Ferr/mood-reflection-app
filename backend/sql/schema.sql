@@ -3,6 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    reset_password_token TEXT,
+    reset_password_expires TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -19,5 +21,5 @@ CREATE TABLE IF NOT EXISTS daily_entries (
 );
 
 -- THE IMPORTANT RULE: 1 ENTRY PER USER PER DAY (ENFORCED BY DB)
-CREATE UNIQUE INDEX IF NOT EXISTS uniq_daily_entryy_per_user_day
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_daily_entry_per_user_day
 ON daily_entries(user_id, entry_date);
