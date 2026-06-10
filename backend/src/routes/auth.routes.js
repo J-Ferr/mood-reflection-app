@@ -29,13 +29,17 @@ router.post("/forgot-password", async (req, res, next) => {
 
     const resetExpires = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
 
-    await pool.query(
+    const updateResult = await pool.query(
       `UPDATE users
-       SET reset_password_token = $1,
-           reset_password_expires = $2
-       WHERE id = $3`,
+      SET reset_password_token = $1,
+        reset_password_expires = $2
+      WHERE id = $3
+      RETURNING id, email, reset_password_token, reset_password_expires`,
       [resetToken, resetExpires, user.id]
     );
+
+    console.log("UPDATE ROWS:", updateResult.rowCount);
+    console.log("UPDATED USER:", updateResult.rows[0]);
 
     const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
 

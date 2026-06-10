@@ -5,19 +5,30 @@ function ForgotPassword() {
     const  [message, setMessage] = useState("");
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+  e.preventDefault();
 
-        const response = await fetch("http://localhost:5000/api/auth/forgot-password", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email }),
-        });
+  console.log("Submitting forgot password for:", email);
 
-        const data = await response.json();
-        setMessage(data.message);
-    };
+  try {
+    const response = await fetch("http://localhost:5000/auth/forgot-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    console.log("Response status:", response.status);
+
+    const data = await response.json();
+    console.log("Response data:", data);
+
+    setMessage(data.message || "Check your email for a reset link.");
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    setMessage("Could not connect to the server.");
+  }
+};
 
     return (
   <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
