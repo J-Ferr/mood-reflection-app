@@ -4,6 +4,7 @@ const { register, login } = require("../controllers/auth.controller");
 const crypto = require("crypto");
 const pool = require("../db/pool");
 const { Pool } = require("pg");
+const bcrypt = require("bcrypt");
 
 router.post("/register", register);
 router.post("/login", login);
@@ -50,6 +51,51 @@ router.post("/forgot-password", async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+router.post("/reset-password/:token", async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    const userResult = await pool.query(
+      `
+      SELECT *
+      FROM users
+      WHERE reset_password_token = $1
+      AND reset_password_expires > NOW()
+      `,
+      [token]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      `
+      UPDATE users
+      SET password_hash = $1,
+          reset_password_token = NULL,
+          reset_password_expires = NULL
+      WHERE reset_password_token = $2
+      `,
+      [hashedPassword, token]
+    );
+
+    res.json({
+      message: "Password reset successful",
+    });
+  } catch (err) {
+    console.error("RESET PASSWORD ERROR:", err);
+    res.status(500).json({
+      message: "Server error resetting password",
+    });
   }
 });
 
