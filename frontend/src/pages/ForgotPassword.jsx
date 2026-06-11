@@ -1,81 +1,87 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import axiosClient from "../api/axiosClient";
 
-function ForgotPassword() {
-    const [email, setEmail] = useState("");
-    const  [message, setMessage] = useState("");
+export default function ForgotPassword() {
+  const [email, setEmail] = useState("");
 
-    const handleSubmit = async (e) => {
-  e.preventDefault();
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  console.log("Submitting forgot password for:", email);
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-  try {
-    const response = await fetch("http://localhost:5000/auth/forgot-password", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
+    setError("");
+    setMessage("");
+    setLoading(true);
 
-    console.log("Response status:", response.status);
+    try {
+      const res = await axiosClient.post("/auth/forgot-password", {
+        email,
+      });
 
-    const data = await response.json();
-    console.log("Response data:", data);
+      setMessage(
+        res.data.message || "Check your email for a reset link."
+      );
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Could not process request.";
 
-    setMessage(data.message || "Check your email for a reset link.");
-  } catch (error) {
-    console.error("Forgot password error:", error);
-    setMessage("Could not connect to the server.");
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   }
-};
 
-    return (
-  <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-    <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-      <h1 className="text-3xl font-bold mb-2">
-        Forgot Password
-      </h1>
+  return (
+    <div className="min-h-screen bg-linear-to-br from-white via-slate-500 to-white flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur border border-slate-200/60 rounded-2xl p-6 shadow-xl shadow-black/10 space-y-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Forgot Password
+          </h1>
 
-      <p className="text-gray-600 mb-6">
-        Enter your email and we'll send you a reset link.
-      </p>
-
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-      >
-        <div>
-          <label className="block mb-2 text-sm font-medium">
-            Email
-          </label>
-
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-            className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Enter your email address and we'll send you a password reset link.
+          </p>
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
-        >
-          Send Reset Link
-        </button>
-      </form>
+        {error && <div className="alert-error">{error}</div>}
+        {message && <div className="alert-success">{message}</div>}
 
-      {message && (
-        <p className="mt-4 text-green-600">
-          {message}
-        </p>
-      )}
+        <form className="space-y-3" onSubmit={handleSubmit}>
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Email</label>
+
+            <input
+              className="input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+
+          <button
+            className="btn btn-primary w-full rounded-xl"
+            disabled={loading}
+          >
+            {loading ? "Sending..." : "Send Reset Link"}
+          </button>
+        </form>
+
+        <div className="text-sm text-slate-600">
+          Remembered your password?{" "}
+          <Link className="underline" to="/login">
+            Back to login
+          </Link>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
 }
-
-export default ForgotPassword;
