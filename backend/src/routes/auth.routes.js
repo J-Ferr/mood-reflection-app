@@ -43,7 +43,7 @@ router.post("/forgot-password", async (req, res, next) => {
     console.log("UPDATE ROWS:", updateResult.rowCount);
     console.log("UPDATED USER:", updateResult.rows[0]);
 
-    const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
     await sendEmail({
       to: email,
