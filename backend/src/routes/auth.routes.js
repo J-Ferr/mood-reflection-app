@@ -43,11 +43,7 @@ router.post("/forgot-password", async (req, res, next) => {
     console.log("UPDATED USER:", updateResult.rows[0]);
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-
-    console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
-    console.log("EMAIL_USER exists:", !!process.env.EMAIL_USER);
-    console.log("EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
-    console.log("Reset link:", resetLink);
+    
 
     await sendEmail({
       to: email,
