@@ -3,7 +3,6 @@ const router = express.Router();
 const { register, login } = require("../controllers/auth.controller");
 const crypto = require("crypto");
 const pool = require("../db/pool");
-const { Pool } = require("pg");
 const bcrypt = require("bcrypt");
 const sendEmail = require("../utils/sendEmail");
 
@@ -45,6 +44,11 @@ router.post("/forgot-password", async (req, res, next) => {
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
+    console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+    console.log("EMAIL_USER exists:", !!process.env.EMAIL_USER);
+    console.log("EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
+    console.log("Reset link:", resetLink);
+
     await sendEmail({
       to: email,
       subject: "Reset your Mood Reflection password",
@@ -56,6 +60,8 @@ router.post("/forgot-password", async (req, res, next) => {
         <p>This link will expire soon.</p>
       `,
     });
+
+    console.log("Reset email sent to:", email);
 
     return res.json({
       message: "If an account exists with that email, a reset link will be sent.",
