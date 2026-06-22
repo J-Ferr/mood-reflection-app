@@ -15,7 +15,7 @@ exports.getTodayEntry = async (req, res, next) => {
     const today = todayDateString();
 
     const result = await pool.query(
-      `SELECT id, entry_date, mood, prompt, note, created_at
+      `SELECT id, entry_date, mood, prompt, prompt_response, note, created_at
        FROM daily_entries
        WHERE user_id = $1 AND entry_date = $2`,
       [userId, today]
@@ -30,7 +30,7 @@ exports.getTodayEntry = async (req, res, next) => {
 exports.createEntry = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { mood, prompt, note } = req.body;
+    const { mood, prompt, promptResponse, note } = req.body;
 
     if (!Number.isInteger(mood) || mood < 1 || mood > 5) {
       return res.status(400).json({ error: "Mood must be an integer from 1 to 5" });
@@ -43,10 +43,10 @@ exports.createEntry = async (req, res, next) => {
     const entryDate = todayDateString();
 
     const result = await pool.query(
-      `INSERT INTO daily_entries (user_id, entry_date, mood, prompt, note)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, entry_date, mood, prompt, note, created_at`,
-      [userId, entryDate, mood, prompt.trim(), typeof note === "string" ? note.trim() : null]
+      `INSERT INTO daily_entries (user_id, entry_date, mood, prompt, prompt_response, note)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, entry_date, mood, prompt, prompt_response, note, created_at`,
+      [userId, entryDate, mood, prompt.trim(), typeof promptResponse === "string" ? promptResponse.trim() : null, typeof note === "string" ? note.trim() : null]
     );
 
     res.status(201).json({ entry: result.rows[0] });
@@ -66,7 +66,7 @@ exports.listEntries = async (req, res, next) => {
     const offset = Math.max(Number(req.query.offset) || 0, 0);
 
     const result = await pool.query(
-      `SELECT id, entry_date, mood, prompt, note, created_at
+      `SELECT id, entry_date, mood, prompt, prompt_response, note, created_at
        FROM daily_entries
        WHERE user_id = $1
        ORDER BY entry_date DESC
@@ -90,7 +90,7 @@ exports.getEntryByDate = async (req, res, next) => {
     }
 
     const result = await pool.query(
-      `SELECT id, entry_date, mood, prompt, note, created_at
+      `SELECT id, entry_date, mood, prompt, prompt_response, note, created_at
        FROM daily_entries
        WHERE user_id = $1 AND entry_date = $2`,
       [userId, date]
@@ -105,9 +105,9 @@ exports.getEntryByDate = async (req, res, next) => {
 exports.updateTodayEntry = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { mood, note } = req.body;
+    const { mood, promptResponse, note } = req.body;
 
-    if (mood === undefined && note === undefined) {
+    if (mood === undefined && promptResponse === undefined && note === undefined) {
       return res.status(400).json({ error: "Nothing to update" });
     }
 
@@ -124,13 +124,15 @@ exports.updateTodayEntry = async (req, res, next) => {
       UPDATE daily_entries
       SET
         mood = COALESCE($1, mood),
-        note = COALESCE($2, note),
+        prompt_response = COALESCE($2, prompt_response),
+        note = COALESCE($3, note),
         updated_at = NOW()
-      WHERE user_id = $3 AND entry_date = $4
-      RETURNING id, entry_date, mood, prompt, note, updated_at
+      WHERE user_id = $4 AND entry_date = $5
+      RETURNING id, entry_date, mood, prompt, prompt_response, note, updated_at
       `,
       [
         mood ?? null,
+        typeof promptResponse === "string" ? promptResponse.trim() : null,
         typeof note === "string" ? note.trim() : null,
         userId,
         today
@@ -195,7 +197,7 @@ exports.getEntryStats = async (req, res, next) => {
     // 4) Recent 7 entries
     const recentEntriesResult = await pool.query(
       `
-      SELECT id, entry_date, mood, prompt, note, created_at
+      SELECT id, entry_date, mood, prompt, prompt_response, note, created_at
       FROM daily_entries
       WHERE user_id = $1
       ORDER BY entry_date DESC

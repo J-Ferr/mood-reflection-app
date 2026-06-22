@@ -45,6 +45,9 @@ export default function Dashboard() {
 
   const [stats, setStats] = useState(null);
 
+  // Today's prompt response 
+  const [promptResponse, setPromptResponse] = useState("");
+
   // Collapsible "today's check-in" card state
   const [isEntryExpanded, setIsEntryExpanded] = useState(false);
 
@@ -98,6 +101,7 @@ export default function Dashboard() {
       const loaded = entryRes.data?.entry || null;
       setEntry(loaded);
 
+      setPromptResponse(loaded?.prompt_response || "");
       // Always start collapsed when loading an existing entry
       setIsEntryExpanded(false);
 
@@ -134,6 +138,7 @@ export default function Dashboard() {
       const res = await axiosClient.post("/entries", {
         mood,
         prompt,
+        promptResponse,
         note: cleanedNote,
       });
 
@@ -174,6 +179,7 @@ export default function Dashboard() {
 
       const res = await axiosClient.patch("/entries/today", {
         mood: editMood,
+        promptResponse,
         note: cleanedEditNote,
       });
 
@@ -238,9 +244,33 @@ export default function Dashboard() {
 
       {!loading && !error && (
         <>
-          <Card className="space-y-3">
+          <Card className="space-y-4">
             <div className={labelClass}>Today’s prompt</div>
-            <div className="text-lg leading-relaxed">{prompt}</div>
+
+            <div className="text-lg leading-relaxed">
+              {prompt}
+            </div>
+
+            {!entry && (
+              <textarea
+                value={promptResponse}
+                onChange={(e) => setPromptResponse(e.target.value)}
+                className="textarea"
+                placeholder="Write your response to today's prompt..."
+              />
+            )}
+
+            {entry && entry.prompt_response && (
+              <div className="rounded-lg bg-slate-50 p-4">
+                <div className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+                  Your response
+                </div>
+                <div className="whitespace-pre-wrap">
+                  {entry.prompt_response}
+              </div>
+            </div>
+          )}
+
           </Card>
 
           {/* streak + insight */}
@@ -327,6 +357,17 @@ export default function Dashboard() {
                       </>
                     ) : (
                       <form onSubmit={handleSaveEdit} className="space-y-4">
+
+                        {/* Prompt Response */}
+                        <div className={labelClass}>Prompt Response</div>
+                        <textarea
+                          value={promptResponse}
+                          onChange={(e) => setPromptResponse(e.target.value)}
+                          className="textarea"
+                          placeholder="Update your response to today's prompt..."
+                          disabled={editing}
+                        />
+                        
                         {/* Mood */}
                         <div className={labelClass}>Mood</div>
                         <div className="flex gap-2 flex-wrap">

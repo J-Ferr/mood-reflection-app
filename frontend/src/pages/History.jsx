@@ -33,12 +33,16 @@ function normalizeEntry(raw) {
 
   const prompt = raw.prompt ?? raw.question ?? raw.prompt_text ?? raw.promptText ?? raw.prompt_label;
 
+const prompt_response =
+  raw.prompt_response ?? raw.promptResponse ?? raw.prompt_answer ?? raw.promptAnswer;
+
   return {
     ...raw,
     entry_date: entry_date ? toYMD(entry_date) : "",
     mood: mood ?? "",
     note: note ?? "",
     prompt: prompt ?? "",
+    prompt_response: prompt_response ?? "",
   };
 }
 
@@ -187,12 +191,7 @@ export default function History() {
                     {formatDate(selected.entry_date)}
                   </div>
 
-                  <div>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
-                      {selectedMood?.emoji || "🙂"} {selectedMood?.label || `Mood ${selected.mood}/5`}
-                    </span>
-                  </div>
-                </div>
+                  
 
                 {selected.prompt?.trim() ? (
                   <div className="space-y-2">
@@ -207,16 +206,38 @@ export default function History() {
 
                 <div className="space-y-2">
                   <div className="text-xs uppercase tracking-wide text-slate-500">
-                    Reflection
+                    Prompt response
                   </div>
                   <div className="whitespace-pre-wrap leading-7 text-slate-800">
-                    {selected.note?.trim() ? (
-                      selected.note
+                    {selected.prompt_response?.trim() ? (
+                      selected.prompt_response
                     ) : (
-                      <span className="text-slate-400">No reflection added yet.</span>
+                      <span className="text-slate-400">No prompt response added yet.</span>
                     )}
+                </div>
+              </div>
+            
+
+              <div className="space-y-2">
+                <div className="text-xs uppercase tracking-wide text-slate-500">
+                  Mood check-in
+                </div>
+
+                <div>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+                      {selectedMood?.emoji || "🙂"} {selectedMood?.label || `Mood ${selected.mood}/5`}
+                    </span>
                   </div>
                 </div>
+                
+                <div className="whitespace-pre-wrap leading-7 text-slate-800">
+                  {selected.note?.trim() ? (
+                    selected.note
+                  ) : (
+                    <span className="text-slate-400">No mood check-in added yet.</span>
+                  )}
+                </div>
+              </div>
               </>
             )}
           </Card>
