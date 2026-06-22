@@ -377,125 +377,129 @@ export default function Dashboard() {
           {entry && (
             <>
               {/* Section header */}
-              <Card className="space-y-4 bg-white/40 backdrop-blur-sm">
-  <div className="flex items-start justify-between gap-4">
-    <div className="space-y-2">
-      <div className={labelClass}>Today’s check-in</div>
+              <Card
+                className={`space-y-4 transition duration-300 ${
+                  isEntryExpanded
+                    ? "bg-white/90"
+                    : "bg-white/20 backdrop-blur-sm opacity-60"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className={labelClass}>Today’s check-in</div>
 
-      <h2 className="text-lg font-semibold text-slate-900">
-        You’ve already checked in today
-      </h2>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      You’ve already checked in today
+                    </h2>
 
-      <div className="text-base font-semibold flex items-center gap-2 text-slate-900">
-        <span className={`${justCompleted ? "lock-pop" : ""}`}>🔒</span>
-        <span>
-          {mForEntry?.emoji} {mForEntry?.label} ({entry.mood}/5)
-        </span>
-      </div>
+                    {!isEntryExpanded && (
+                      <p className="text-sm text-slate-600">
+                        You can review or update your reflection anytime today.
+                      </p>
+                    )}
 
-      <div className="text-sm text-slate-600">
-        {preview || "No mood check-in added yet."}
-      </div>
+                    {isEntryExpanded && (
+                      <>
+          
+                </>
+              )}
+            </div>
 
-      <div className="text-xs text-slate-400">
-        Saved for {formatDate(entry.entry_date)}
-      </div>
-    </div>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsEditing(false);
+                            setIsEntryExpanded((prev) => !prev);
+                          }}
+                          className="text-sm underline text-slate-700"
+                        >
+                          {isEntryExpanded && !isEditing ? "Hide" : "View"}
+                        </button>
 
-    <div className="flex gap-3">
-      <button
-        type="button"
-        onClick={() => {
-          setIsEditing(false);
-          setIsEntryExpanded((prev) => !prev);
-        }}
-        className="text-sm underline text-slate-700"
-      >
-        {isEntryExpanded && !isEditing ? "Hide" : "View"}
-      </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsEntryExpanded(true);
+                            setIsEditing(true);
+                          }}
+                          className="text-sm underline text-slate-700"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
 
-      <button
-        type="button"
-        onClick={() => {
-          setIsEntryExpanded(true);
-          setIsEditing(true);
-        }}
-        className="text-sm underline text-slate-700"
-      >
-        Edit
-      </button>
-    </div>
-  </div>
+                    {isEntryExpanded && !isEditing && (
+                      <div className="pt-2 space-y-4">
+                        <div className="space-y-2">
+                          <div className={labelClass}>Mood</div>
+                          <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+                            {mForEntry?.emoji} {mForEntry?.label}
+                          </span>
+                        </div>
 
-  {isEntryExpanded && !isEditing && (
-    <div className="pt-2 space-y-4">
-      <div className="space-y-2">
-        <div className={labelClass}>Mood</div>
-        <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
-          {mForEntry?.emoji} {mForEntry?.label}
-        </span>
-      </div>
+                        <div className="space-y-2">
+                          <div className={labelClass}>Mood check-in</div>
+                          <div className="leading-relaxed whitespace-pre-wrap text-slate-800">
+                            {entry.note || "No mood check-in added yet."}
+                          </div>
+                        </div>
 
-      <div className="space-y-2">
-        <div className={labelClass}>Mood check-in</div>
-        <div className="leading-relaxed whitespace-pre-wrap text-slate-800">
-          {entry.note || "No mood check-in added yet."}
-        </div>
-      </div>
-    </div>
-  )}
+                  <div className="pt-2 text-xs text-slate-400">
+                    Saved for {formatDate(entry.entry_date)}
+                  </div>
 
-  {isEntryExpanded && isEditing && (
-    <form onSubmit={handleSaveEdit} className="space-y-4">
-      <div className={labelClass}>Mood</div>
+              </div>
+              )}
 
-      <div className="flex gap-2 flex-wrap">
-        {MOODS.map((m) => (
-          <button
-            key={m.value}
-            type="button"
-            onClick={() => setEditMood(m.value)}
-            className={`btn ${
-              editMood === m.value ? "btn-primary" : "btn-outline"
-            }`}
-            disabled={editing}
-          >
-            {m.emoji} {m.label}
-          </button>
-        ))}
-      </div>
+                {isEntryExpanded && isEditing && (
+                  <form onSubmit={handleSaveEdit} className="space-y-4">
+                    <div className={labelClass}>Mood</div>
 
-      <div className={labelClass}>Mood check-in</div>
+                    <div className="flex gap-2 flex-wrap">
+                      {MOODS.map((m) => (
+                        <button
+                          key={m.value}
+                          type="button"
+                          onClick={() => setEditMood(m.value)}
+                          className={`btn ${
+                            editMood === m.value ? "btn-primary" : "btn-outline"
+                          }`}
+                          disabled={editing}
+                        >
+                          {m.emoji} {m.label}
+                        </button>
+                      ))}
+                    </div>
 
-      <textarea
-        value={editNote}
-        onChange={(e) => setEditNote(e.target.value)}
-        className="textarea"
-        placeholder="Update your check-in..."
-        disabled={editing}
-      />
+                    <div className={labelClass}>Mood check-in</div>
 
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={editing}
-        >
-          {editing ? "Saving changes..." : "Save changes"}
-        </button>
+                    <textarea
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
+                      className="textarea"
+                      placeholder="Update your check-in..."
+                      disabled={editing}
+                    />
 
-        <button
-          type="button"
-          className="btn btn-outline"
-          onClick={() => setIsEditing(false)}
-          disabled={editing}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  )}
-</Card>
+                  <div className="flex gap-2">
+                      <button type="submit" className="btn btn-primary" disabled={editing}>
+                        {editing ? "Saving changes..." : "Save changes"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => setIsEditing(false)}
+                        disabled={editing}
+                      >
+                       Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </Card>
           </>
         )}
 
