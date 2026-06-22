@@ -47,6 +47,9 @@ export default function Dashboard() {
 
   // Today's prompt response 
   const [promptResponse, setPromptResponse] = useState("");
+  const [showPromptResponse, setShowPromptResponse] = useState(false);
+  const [isEditingPromptResponse, setIsEditingPromptResponse] = useState(false);
+  const [savingPromptResponse, setSavingPromptResponse] = useState(false);
 
   // Collapsible "today's check-in" card state
   const [isEntryExpanded, setIsEntryExpanded] = useState(false);
@@ -183,11 +186,12 @@ export default function Dashboard() {
         note: cleanedEditNote,
       });
 
-      setEntry(res.data.entry);
+      await loadDashboard();
+
       setIsEditing(false);
-      setIsEntryExpanded(true); // keep open after saving edits
+      setIsEntryExpanded(true);
       triggerCompletedAnim();
-      await loadStats();
+
     } catch (err) {
       setError("Failed to update entry.");
       if (err?.response?.status === 401) {
@@ -196,6 +200,30 @@ export default function Dashboard() {
       }
     } finally {
       setEditing(false);
+    }
+  }
+
+  async function handleSavePromptResponse(e) {
+    e.preventDefault();
+    setSavingPromptResponse(true);
+    setError("");
+
+    try {
+      const res = await axiosClient.patch("/entries/today", {
+        promptResponse,
+      });
+
+      setEntry(res.data.entry);
+      setIsEditingPromptResponse(false);
+      await loadStats();
+    } catch (err) {
+      setError("Failed to update prompt response.");
+      if (err?.response?.status === 401) {
+        clearToken();
+        navigate("/login");
+      }
+    } finally {
+      setSavingPromptResponse(false);
     }
   }
 
@@ -260,16 +288,82 @@ export default function Dashboard() {
               />
             )}
 
-            {entry && entry.prompt_response && (
-              <div className="rounded-lg bg-slate-50 p-4">
-                <div className="text-xs uppercase tracking-wide text-slate-500 mb-2">
-                  Your response
-                </div>
+            {entry && (
+              <div className="rounded-lg bg-slate-50 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm text-slate-600">
+                    {entry.prompt_response ? "✓ Response saved" : "No response added yet"}
+                  </div>
+
+                  <div className="flex gap-3">
+                    {entry.prompt_response && !isEditingPromptResponse && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPromptResponse((prev) => !prev)}
+                        className="text-sm underline text-slate-700"
+                      >
+                        {showPromptResponse ? "Hide response" : "View response"}
+                      </button>
+                    )}
+
+                    {!isEditingPromptResponse && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPromptResponse(entry.prompt_response || "");
+                          setShowPromptResponse(true);
+                          setIsEditingPromptResponse(true);
+                        }}
+                        className="text-sm underline text-slate-700"
+                      >
+                        {entry.prompt_response ? "Edit response" : "Add response"}
+                      </button>
+                    )}
+                  </div>
+              </div>
+
+              {showPromptResponse && !isEditingPromptResponse && entry.prompt_response && (
                 <div className="whitespace-pre-wrap">
                   {entry.prompt_response}
-              </div>
-            </div>
-          )}
+                </div>
+              )}
+
+              {isEditingPromptResponse && (
+                <form onSubmit={handleSavePromptResponse} className="space-y-3">
+                  <textarea
+                    value={promptResponse}
+                    onChange={(e) => setPromptResponse(e.target.value)}
+                    className="textarea"
+                    placeholder="Update your response to today's prompt..."
+                    disabled={savingPromptResponse}
+                  />
+
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={savingPromptResponse}
+                    >
+                      {savingPromptResponse ? "Saving..." : "Save response"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      disabled={savingPromptResponse}
+                      onClick={() => {
+                        setPromptResponse(entry.prompt_response || "");
+                        setIsEditingPromptResponse(false);
+                        setShowPromptResponse(false);
+                      }}
+                    >
+                      Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
 
           </Card>
 
@@ -283,142 +377,125 @@ export default function Dashboard() {
           {entry && (
             <>
               {/* Section header */}
-              <div className="space-y-1 bg-white/40 backdrop-blur-sm rounded-xl p-4">
-                <div className={labelClass}>Today’s check-in</div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  You’ve already checked in today
-                </h2>
-                <p className="text-sm text-slate-600">
-                  You can review or update your reflection anytime today.
-                </p>
-              </div>
+              <Card className="space-y-4 bg-white/40 backdrop-blur-sm">
+  <div className="flex items-start justify-between gap-4">
+    <div className="space-y-2">
+      <div className={labelClass}>Today’s check-in</div>
 
-              <Card className="space-y-3">
-                {/* Header row */}
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="text-base font-semibold flex items-center gap-2 text-slate-900">
-                      <span className={`${justCompleted ? "lock-pop" : ""}`}>🔒</span>
-                      <span>
-                        {mForEntry?.emoji} {mForEntry?.label} ({entry.mood}/5)
-                      </span>
-                    </div>
+      <h2 className="text-lg font-semibold text-slate-900">
+        You’ve already checked in today
+      </h2>
 
-                    <div className="text-sm text-slate-600">
-                      {preview || "No reflection added yet."}
-                    </div>
+      <div className="text-base font-semibold flex items-center gap-2 text-slate-900">
+        <span className={`${justCompleted ? "lock-pop" : ""}`}>🔒</span>
+        <span>
+          {mForEntry?.emoji} {mForEntry?.label} ({entry.mood}/5)
+        </span>
+      </div>
 
-                    <div className="text-xs text-slate-400">
-                      Saved for {formatDate(entry.entry_date)}
-                    </div>
-                  </div>
+      <div className="text-sm text-slate-600">
+        {preview || "No mood check-in added yet."}
+      </div>
 
-                  {/* Expand toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setIsEntryExpanded((prev) => !prev)}
-                    className="text-sm text-slate-500"
-                  >
-                    {isEntryExpanded ? "Hide full check-in" : "View full check-in"}
-                  </button>
-                </div>
+      <div className="text-xs text-slate-400">
+        Saved for {formatDate(entry.entry_date)}
+      </div>
+    </div>
 
-                {/* Expanded content */}
-                {isEntryExpanded && (
-                  <div className="pt-2 space-y-4">
-                    {!isEditing ? (
-                      <>
-                        {/* Mood */}
-                        <div className="space-y-2">
-                          <div className={labelClass}>Mood</div>
-                          <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
-                            {mForEntry?.emoji} {mForEntry?.label}
-                          </span>
-                        </div>
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={() => {
+          setIsEditing(false);
+          setIsEntryExpanded((prev) => !prev);
+        }}
+        className="text-sm underline text-slate-700"
+      >
+        {isEntryExpanded && !isEditing ? "Hide" : "View"}
+      </button>
 
-                        {/* Reflection */}
-                        <div className="space-y-2">
-                          <div className={labelClass}>Reflection</div>
-                          <div className="leading-relaxed whitespace-pre-wrap text-slate-800">
-                            {entry.note || "No reflection added yet."}
-                          </div>
-                        </div>
+      <button
+        type="button"
+        onClick={() => {
+          setIsEntryExpanded(true);
+          setIsEditing(true);
+        }}
+        className="text-sm underline text-slate-700"
+      >
+        Edit
+      </button>
+    </div>
+  </div>
 
-                        {/* Edit button */}
-                        <button
-                          onClick={() => {
-                            setIsEditing(true);
-                            setIsEntryExpanded(true);
-                          }}
-                          className="text-sm underline text-slate-700"
-                        >
-                          Edit today’s check-in
-                        </button>
-                      </>
-                    ) : (
-                      <form onSubmit={handleSaveEdit} className="space-y-4">
+  {isEntryExpanded && !isEditing && (
+    <div className="pt-2 space-y-4">
+      <div className="space-y-2">
+        <div className={labelClass}>Mood</div>
+        <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+          {mForEntry?.emoji} {mForEntry?.label}
+        </span>
+      </div>
 
-                        {/* Prompt Response */}
-                        <div className={labelClass}>Prompt Response</div>
-                        <textarea
-                          value={promptResponse}
-                          onChange={(e) => setPromptResponse(e.target.value)}
-                          className="textarea"
-                          placeholder="Update your response to today's prompt..."
-                          disabled={editing}
-                        />
-                        
-                        {/* Mood */}
-                        <div className={labelClass}>Mood</div>
-                        <div className="flex gap-2 flex-wrap">
-                          {MOODS.map((m) => (
-                            <button
-                              key={m.value}
-                              type="button"
-                              onClick={() => setEditMood(m.value)}
-                              className={`btn ${
-                                editMood === m.value ? "btn-primary" : "btn-outline"
-                              }`}
-                              disabled={editing}
-                            >
-                              {m.emoji} {m.label}
-                            </button>
-                          ))}
-                        </div>
+      <div className="space-y-2">
+        <div className={labelClass}>Mood check-in</div>
+        <div className="leading-relaxed whitespace-pre-wrap text-slate-800">
+          {entry.note || "No mood check-in added yet."}
+        </div>
+      </div>
+    </div>
+  )}
 
-                        {/* Reflection */}
-                        <div className={labelClass}>Reflection</div>
-                        <textarea
-                          value={editNote}
-                          onChange={(e) => setEditNote(e.target.value)}
-                          className="textarea"
-                          placeholder="Update your reflection..."
-                          disabled={editing}
-                        />
+  {isEntryExpanded && isEditing && (
+    <form onSubmit={handleSaveEdit} className="space-y-4">
+      <div className={labelClass}>Mood</div>
 
-                        {/* Actions */}
-                        <div className="flex gap-2">
-                          <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={editing}
-                          >
-                            {editing ? "Saving changes..." : "Save changes"}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-outline"
-                            onClick={() => setIsEditing(false)}
-                            disabled={editing}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                    </form>
-                  )}
-                </div>
-              )}
-            </Card>
+      <div className="flex gap-2 flex-wrap">
+        {MOODS.map((m) => (
+          <button
+            key={m.value}
+            type="button"
+            onClick={() => setEditMood(m.value)}
+            className={`btn ${
+              editMood === m.value ? "btn-primary" : "btn-outline"
+            }`}
+            disabled={editing}
+          >
+            {m.emoji} {m.label}
+          </button>
+        ))}
+      </div>
+
+      <div className={labelClass}>Mood check-in</div>
+
+      <textarea
+        value={editNote}
+        onChange={(e) => setEditNote(e.target.value)}
+        className="textarea"
+        placeholder="Update your check-in..."
+        disabled={editing}
+      />
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={editing}
+        >
+          {editing ? "Saving changes..." : "Save changes"}
+        </button>
+
+        <button
+          type="button"
+          className="btn btn-outline"
+          onClick={() => setIsEditing(false)}
+          disabled={editing}
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  )}
+</Card>
           </>
         )}
 
@@ -455,7 +532,7 @@ export default function Dashboard() {
                   ))}
                 </div>
 
-                <div className={labelClass}>Reflection</div>      
+                <div className={labelClass}>Mood check-in</div>      
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}

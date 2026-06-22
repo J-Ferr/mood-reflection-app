@@ -198,7 +198,7 @@ export default function History() {
                     <div className="text-xs uppercase tracking-wide text-slate-500">
                       Prompt
                     </div>
-                    <div className="text-sm leading-6 text-slate-700">
+                    <div className="text-lg font-semibold leading-7 text-slate-700">
                       {selected.prompt}
                     </div>
                   </div>
@@ -229,7 +229,7 @@ export default function History() {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="whitespace-pre-wrap leading-7 text-slate-800">
                   {selected.note?.trim() ? (
                     selected.note
