@@ -393,9 +393,19 @@ export default function Dashboard() {
                     </h2>
 
                     {!isEntryExpanded && (
-                      <p className="text-sm text-slate-600">
-                        You can review or update your reflection anytime today.
-                      </p>
+                      <div className="mt-2 space-y-2">
+                        <div className="text-sm font-medium text-slate-700">
+                          {mForEntry?.emoji} {mForEntry?.label}
+                        </div>
+
+                        <p className="text-sm text-slate-600">
+                          {preview || "No reflection added yet."}
+                        </p>
+
+                        <div className="text-xs text-slate-400">
+                          Saved for {formatDate(entry.entry_date)}
+                        </div>
+                      </div>
                     )}
 
                     {isEntryExpanded && (
