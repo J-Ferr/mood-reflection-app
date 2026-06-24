@@ -206,7 +206,13 @@ exports.getEntryStats = async (req, res, next) => {
       [userId]
     );
 
-    const recentEntries = recentEntriesResult.rows;
+    const recentEntries = recentEntriesResult.rows.map((entry) => ({
+      ...entry,
+      entry_date:
+        entry.entry_date instanceof Date
+          ? entry.entry_date.toISOString().slice(0, 10)
+          : entry.entry_date,
+    }));
 
     // 5) Recent average mood
     const recentAverageMood =

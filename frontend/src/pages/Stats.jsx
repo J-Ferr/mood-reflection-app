@@ -179,6 +179,7 @@ function normalizeTrendEntries(stats) {
         return {
           id: entry.id ?? `${index}-${moodValue ?? "mood"}`,
           moodValue,
+          date: entry.entry_date || entry.date || entry.created_at || null,
         };
       })
       .filter((entry) => entry.moodValue !== null)
@@ -258,6 +259,23 @@ function buildInsight({
   return "Your mood history is starting to form a pattern. Keep checking in consistently so the app can give you sharper insights.";
 }
 
+function formatShortDate(value) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return {
+    monthDay: date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    weekday: date.toLocaleDateString("en-US", {
+      weekday: "short",
+    }),
+  };
+}
+
 function MoodTrend({ entries }) {
   if (!entries.length) {
     return <p className="mt-4 text-sm text-slate-500">No recent trend yet.</p>;
@@ -273,7 +291,7 @@ function MoodTrend({ entries }) {
           return (
             <div
               key={entry.id}
-              className="flex flex-col items-center gap-2"
+              className="flex flex-col items-end gap-3"
               title={`${info.label} (${entry.moodValue}/5)`}
             >
               <div
@@ -281,7 +299,21 @@ function MoodTrend({ entries }) {
                 style={{ height: `${height}px` }}
               />
               <span className="text-lg">{info.emoji}</span>
-              <span className="text-[10px] text-slate-500">{index + 1}</span>
+              {formatShortDate(entry.date) ? (
+                <div className="text-center leading-tight">
+                  <div className="text-[10px] text-slate-500">
+                  {formatShortDate(entry.date).monthDay}
+                </div>
+
+                <div className="text-[9px] text-slate-400">
+                  {formatShortDate(entry.date).weekday}
+                </div>
+              </div>
+            ) : (
+              <span className="text-[10px] text-slate-500">
+                {index + 1}
+              </span>
+            )}
             </div>
           );
         })}
@@ -335,6 +367,7 @@ export default function Stats() {
     async function loadStats() {
       try {
         const res = await axiosClient.get("/entries/stats");
+        
         setStats(res.data);
       } catch (err) {
         if (err?.response?.status === 401) {
