@@ -26,6 +26,123 @@ function makePreview(text, max = 70) {
   return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
 }
 
+// 30-day mood activity
+function formatDateKey(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function getMoodSquareClass(mood) {
+  const classes = {
+    1: "bg-rose-300",
+    2: "bg-orange-300",
+    3: "bg-amber-300",
+    4: "bg-emerald-300",
+    5: "bg-cyan-300",
+  };
+
+  return classes[mood] || "bg-slate-300";
+}
+
+function MoodActivityGrid({ entries }) {
+  const entryMap = new Map(
+    (entries || []).map((entry) => [entry.entry_date?.slice(0, 10), entry])
+  );
+
+  const days = Array.from({ length: 30 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (29 - index));
+
+    const key = formatDateKey(date);
+    const entry = entryMap.get(key);
+    const mood = MOODS.find((m) => m.value === entry?.mood);
+
+    return {
+      key,
+      date,
+      entry,
+      mood,
+    };
+  });
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className={labelClass}>Mood activity</div>
+          <p className="mt-1 text-sm text-slate-500">
+            Your last 30 days of check-ins.
+          </p>
+        </div>
+
+        <div className="text-xs text-slate-400">
+          Last 30 days
+        </div>
+      </div>
+
+      <div className="grid grid-cols-10 gap-2 text-xs text-slate-500">
+        {days.map((day, index) => {
+        const isFirstDay = index === 0;
+        const previousDay = days[index - 1];
+
+        const monthChanged =
+          isFirstDay ||
+          day.date.getMonth() !== previousDay.date.getMonth();
+
+        const monthLabel = day.date.toLocaleDateString("en-US", {
+          month: "short",
+        });
+
+        return (
+          <div key={day.key} className="space-y-1">
+            <div className="h-4 text-center text-[10px] text-slate-500">
+              {monthChanged ? monthLabel : ""}
+            </div>
+
+            <div
+              title={
+                day.entry
+                  ? `${day.date.toDateString()} — ${day.mood?.emoji || ""} ${day.mood?.label || ""}`
+                  : `${day.date.toDateString()} — No check-in`
+              }
+              className={`h-8 rounded-md flex items-center justify-center text-[10px] font-medium text-slate-600 ${getMoodSquareClass(day.entry?.mood)}`}
+            >
+              {day.date.getDate()}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+      <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+        <span className="flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm bg-slate-200" />
+          None
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm bg-rose-300" />
+          Rough
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm bg-orange-300" />
+          Low
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm bg-amber-300" />
+          Okay
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm bg-emerald-300" />
+          Good
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm bg-cyan-300" />
+          Great
+        </span>
+      </div>
+    </Card>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
 
@@ -376,6 +493,10 @@ export default function Dashboard() {
           <div className="pt-2">
             <div className="h-px w-full bg-slate-200/60 mb-4" />
             <StatsCard stats={stats} />
+
+            <div className="mt-4">
+              <MoodActivityGrid entries={stats?.recentEntries} />
+            </div>
           </div>
 
           {/* If entry exists: show compact collapsible "Today's check-in" tile */}

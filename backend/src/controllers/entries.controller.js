@@ -194,14 +194,14 @@ exports.getEntryStats = async (req, res, next) => {
       [userId]
     );
 
-    // 4) Recent 7 entries
+    // 4) Recent 30 entries
     const recentEntriesResult = await pool.query(
       `
       SELECT id, entry_date, mood, prompt, prompt_response, note, created_at
       FROM daily_entries
       WHERE user_id = $1
       ORDER BY entry_date DESC
-      LIMIT 7
+      LIMIT 30
       `,
       [userId]
     );
