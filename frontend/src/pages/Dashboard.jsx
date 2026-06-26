@@ -278,8 +278,8 @@ export default function Dashboard() {
               <div className={labelClass}>Today's prompt</div>
             </div>
 
-            <div className="rounded-2xl bg-white/50 p-5">
-              <p className="text-2xl front-medium leading-relaxed text-slate-900">
+            <div className="">
+              <p className="text-2xl font-medium leading-relaxed text-slate-900">
                 "{prompt}"
               </p>
             </div>
