@@ -233,8 +233,8 @@ export default function Dashboard() {
 
   return (
     <Page
-      title="Dashboard"
-      subtitle="Daily check-in for your mood and reflection."
+      title="Welcome back"
+      subtitle="How are you feeling today?"
       right={
         <button onClick={handleLogout} className="btn btn-outline text-sm">
           Log out
@@ -273,10 +273,15 @@ export default function Dashboard() {
       {!loading && !error && (
         <>
           <Card className="space-y-4">
-            <div className={labelClass}>Today’s prompt</div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🌿</span>
+              <div className={labelClass}>Today's prompt</div>
+            </div>
 
-            <div className="text-lg leading-relaxed">
-              {prompt}
+            <div className="rounded-2xl bg-white/50 p-5">
+              <p className="text-2xl front-medium leading-relaxed text-slate-900">
+                "{prompt}"
+              </p>
             </div>
 
             {!entry && (

@@ -22,36 +22,53 @@ export default function StatsCard({ stats }) {
   }
 
   return (
-    <Card className="space-y-4">
-      <div className="flex items-start justify-between gap-6 flex-wrap">
-        <div className="space-y-1">
+    <Card className="space-y-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl bg-white/40 p-4">
           <div className="text-xs uppercase tracking-wide text-slate-500">
-            Your check-in
+            🔥 Current streak
           </div>
-
-          <div className="text-2xl font-extrabold">
+          <div className="mt-2 text-2xl font-extrabold text-slate-900">
             {currentStreakDays} day{currentStreakDays === 1 ? "" : "s"}
-            <span className="text-sm font-semibold text-slate-500 ml-2">
-              (best: {longestStreakDays})
-            </span>
-          </div>
-
-          <div className="text-sm text-slate-600">
-            This month:{" "}
-            <span className="font-semibold">{thisMonthEntries}</span> • Total:{" "}
-            <span className="font-semibold">{totalEntries}</span>
           </div>
         </div>
 
-        <div className="min-w-65 flex-1 space-y-1">
+        <div className="rounded-2xl bg-white/40 p-4">
           <div className="text-xs uppercase tracking-wide text-slate-500">
-            Insight
+            🏆 Best streak
           </div>
-
-          <div className="text-sm text-slate-800 leading-relaxed">
-            {insight}
+          <div className="mt-2 text-2xl font-extrabold text-slate-900">
+            {longestStreakDays} day{longestStreakDays === 1 ? "" : "s"}
           </div>
         </div>
+
+        <div className="rounded-2xl bg-white/40 p-4">
+          <div className="text-xs uppercase tracking-wide text-slate-500">
+            📅 This month
+          </div>
+          <div className="mt-2 text-2xl font-extrabold text-slate-900">
+            {thisMonthEntries}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white/40 p-4">
+          <div className="text-xs uppercase tracking-wide text-slate-500">
+            ✍️ Total entries
+          </div>
+          <div className="mt-2 text-2xl font-extrabold text-slate-900">
+            {totalEntries}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white/40 p-4">
+        <div className="text-xs uppercase tracking-wide text-slate-500">
+          💡 Insight
+        </div>
+
+        <p className="mt-2 text-sm leading-relaxed text-slate-700">
+          {insight}
+        </p>
       </div>
     </Card>
   );
